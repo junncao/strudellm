@@ -41,8 +41,8 @@ import * as React from "react";
  */
 export interface MessageThreadFullProps
   extends React.HTMLAttributes<HTMLDivElement> {
-  /** Optional context key for the thread */
-  contextKey?: string;
+  /** Optional user key for the thread */
+  userKey?: string;
   /**
    * Controls the visual styling of messages in the thread.
    * Possible values include: "default", "compact", etc.
@@ -61,18 +61,21 @@ const defaultSuggestions: Suggestion[] = [
   {
     id: "suggestion-1",
     title: "Get started",
+    description: "What can you help me with?",
     detailedSuggestion: "What can you help me with?",
     messageId: "welcome-query",
   },
   {
     id: "suggestion-2",
     title: "Learn more",
+    description: "Tell me about your capabilities.",
     detailedSuggestion: "Tell me about your capabilities.",
     messageId: "capabilities-query",
   },
   {
     id: "suggestion-3",
     title: "Examples",
+    description: "Show me some example queries I can try.",
     detailedSuggestion: "Show me some example queries I can try.",
     messageId: "examples-query",
   },
@@ -81,14 +84,14 @@ const defaultSuggestions: Suggestion[] = [
 export const MessageThreadFull = React.forwardRef<
   HTMLDivElement,
   MessageThreadFullProps
->(({ className, contextKey, variant, initialSuggestions, ...props }, ref) => {
+>(({ className, userKey, variant, initialSuggestions, ...props }, ref) => {
   const { containerRef, historyPosition } = useThreadContainerContext();
   const mergedRef = useMergeRefs<HTMLDivElement | null>(ref, containerRef);
 
   const suggestions = initialSuggestions ?? defaultSuggestions;
 
   const threadHistorySidebar = (
-    <ThreadHistory contextKey={contextKey} position={historyPosition}>
+    <ThreadHistory userKey={userKey} position={historyPosition}>
       <ThreadHistoryHeader />
       <ThreadHistoryNewButton />
       <ThreadHistorySearch />
@@ -120,7 +123,7 @@ export const MessageThreadFull = React.forwardRef<
 
         {/* Message input */}
         <div className="px-4 pb-4">
-          <MessageInput contextKey={contextKey}>
+          <MessageInput userKey={userKey}>
             <MessageInputTextarea placeholder="Type your message or paste images..." />
             <MessageInputToolbar>
               <MessageInputFileButton />
