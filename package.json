@@ -21,7 +21,7 @@
     "@tailwindcss/oxide": "^4.1.17",
     "@tambo-ai/react": "^1.2.5",
     "@types/better-sqlite3": "^7.6.13",
-    "better-auth": "^1.4.7",
+    "better-auth": "^1.4.9",
     "better-sqlite3": "^12.5.0",
     "class-variance-authority": "^0.7.1",
     "dompurify": "^3.3.1",
