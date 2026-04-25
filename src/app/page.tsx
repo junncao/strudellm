@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -33,6 +34,7 @@ export const metadata: Metadata = {
 };
 
 export default function LandingPage() {
+  redirect("/chat");
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Hero Section */}

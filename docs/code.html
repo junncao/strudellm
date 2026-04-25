@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DAW Studio - Sonic Architect</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800;900&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#e1e3e4",
+                        "on-surface-variant": "#444841",
+                        "background": "#ecffe4",
+                        "on-error-container": "#93000a",
+                        "primary-container": "#c2c4c5",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#d6e8ce",
+                        "on-primary-fixed-variant": "#454748",
+                        "outline-variant": "#c4c8bf",
+                        "surface-container": "#e1f3d9",
+                        "tertiary-fixed": "#ffe087",
+                        "inverse-surface": "#253423",
+                        "secondary-fixed": "#ffd9df",
+                        "inverse-on-surface": "#e4f6dc",
+                        "on-tertiary-fixed": "#241a00",
+                        "on-surface": "#111f0f",
+                        "secondary": "#894c5a",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#e7f9de",
+                        "on-secondary-fixed": "#380b18",
+                        "on-primary-fixed": "#191c1d",
+                        "tertiary-container": "#e8c03b",
+                        "surface-bright": "#ecffe4",
+                        "surface": "#ecffe4",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#ebc23e",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "on-secondary-fixed-variant": "#6d3543",
+                        "surface-dim": "#cddfc6",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#c5c7c8",
+                        "secondary-fixed-dim": "#ffb2c1",
+                        "on-secondary-container": "#7b414e",
+                        "surface-container-highest": "#d6e8ce",
+                        "on-primary-container": "#4e5152",
+                        "surface-container-high": "#dbeed3",
+                        "outline": "#747871",
+                        "surface-tint": "#5c5f60",
+                        "on-background": "#111f0f",
+                        "secondary-container": "#ffb2c1",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary": "#735c00",
+                        "primary-fixed-dim": "#c5c7c8",
+                        "primary": "#5c5f60",
+                        "on-tertiary-container": "#634e00"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-headline { font-family: 'Manrope', sans-serif; }
+        
+        .track-recessed {
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .knob-glow:hover {
+            box-shadow: 0 0 12px #ffe087;
+        }
+        .tonal-shift {
+            transition: background-color 0.3s ease;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col overflow-hidden">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-6 py-3 bg-[#ecffe4] dark:bg-[#1a1c19] sticky top-0 z-50 border-none">
+<div class="flex items-center gap-8">
+<span class="text-xl font-black text-[#5c5f60] tracking-tighter">DAW Studio</span>
+<nav class="hidden md:flex gap-6 items-center">
+<a class="font-manrope tracking-tight font-bold text-sm uppercase text-[#5c5f60] border-b-2 border-[#894c5a] pb-1" href="#">Mixer</a>
+<a class="font-manrope tracking-tight font-bold text-sm uppercase text-[#5c5f60]/60 hover:text-[#5c5f60] transition-colors" href="#">Arrangement</a>
+<a class="font-manrope tracking-tight font-bold text-sm uppercase text-[#5c5f60]/60 hover:text-[#5c5f60] transition-colors" href="#">Sampler</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center bg-surface-container-highest rounded-full px-4 py-1 gap-2">
+<button class="p-2 text-[#5c5f60] hover:bg-[#894c5a]/10 hover:shadow-[0_0_12px_#ffe087] rounded-full transition-all scale-95 active:bg-[#735c00]">
+<span class="material-symbols-outlined" data-icon="play_arrow">play_arrow</span>
+</button>
+<button class="p-2 text-[#5c5f60] hover:bg-[#894c5a]/10 hover:shadow-[0_0_12px_#ffe087] rounded-full transition-all scale-95 active:bg-[#735c00]">
+<span class="material-symbols-outlined" data-icon="stop">stop</span>
+</button>
+<button class="p-2 text-[#5c5f60] hover:bg-[#894c5a]/10 hover:shadow-[0_0_12px_#ffe087] rounded-full transition-all scale-95 active:bg-[#735c00]">
+<span class="material-symbols-outlined" data-icon="refresh">refresh</span>
+</button>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden border-2 border-surface-container-highest">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="Close-up portrait of a creative professional in a studio environment with soft natural lighting and neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBNUc6Mndz9p6yUjevYwNNdade6xUwO5p2OhDock23IF8T6bqF2OB7T_ObjEIkJ2BtDDAqi4Kvv0CnZN25NinfHclXiX78Co1c0szDdTKO_5UYlUpSzCUMKFt1IYqgx2epS0btJM50ZYASn-RVFsqFcCOQEa3stcS7ww9EF7naIU1i-Do_18vowVQwPFHRVhg5iDhtuO5maFkFDy2S7OxFVnhFRonaJjdxo-xko1dTP8VydmAkClCUSWsqcJKKK3NB28S0OMVx5L4"/>
+</div>
+</div>
+</header>
+<main class="flex-1 flex overflow-hidden">
+<!-- Main Workspace: Arrangement & Tracks -->
+<section class="flex-1 p-8 overflow-y-auto space-y-6">
+<header class="mb-10">
+<h1 class="text-5xl font-black tracking-tighter text-primary mb-2">Project: Morning Drift</h1>
+<p class="font-manrope text-xs font-bold tracking-widest uppercase opacity-60">Created with Sonic Architect AI</p>
+</header>
+<!-- Multi-Track Layout -->
+<div class="space-y-4">
+<!-- Track 1 -->
+<div class="bg-surface-container-low rounded-xl p-1 flex gap-1 h-48 overflow-hidden group">
+<div class="w-80 bg-surface-container-highest rounded-lg p-6 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-headline font-extrabold text-lg text-primary">DRUMS_01</h3>
+<button class="p-2 bg-surface-container-lowest rounded-full shadow-sm hover:shadow-[0_0_12px_#ffe087] transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="visibility">visibility</span>
+</button>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-1 rounded-full bg-surface-container-lowest text-[10px] font-black tracking-widest uppercase hover:bg-secondary-container hover:text-on-secondary-container transition-all">SOLO</button>
+<button class="px-4 py-1 rounded-full bg-surface-container-lowest text-[10px] font-black tracking-widest uppercase hover:bg-error-container hover:text-on-error-container transition-all">MUTE</button>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-[10px] font-bold uppercase opacity-50">
+<span>Volume</span>
+<span>-2.4dB</span>
+</div>
+<div class="relative h-8 bg-surface-dim rounded-full flex items-center px-1">
+<div class="h-1 bg-primary/20 absolute left-4 right-4 rounded-full"></div>
+<div class="w-8 h-8 bg-surface-container-lowest rounded-full shadow-md cursor-pointer absolute left-[60%] border-2 border-surface-variant flex items-center justify-center knob-glow">
+<div class="w-1 h-3 bg-secondary rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-lowest/50 rounded-lg relative overflow-hidden track-recessed flex items-center">
+<div class="absolute inset-0 opacity-20 pointer-events-none">
+<div class="h-full w-full flex items-center justify-around px-4 gap-1">
+<!-- Waveform visualization -->
+<div class="w-1 bg-primary rounded-full h-1/2"></div><div class="w-1 bg-primary rounded-full h-2/3"></div><div class="w-1 bg-primary rounded-full h-1/4"></div><div class="w-1 bg-primary rounded-full h-3/4"></div><div class="w-1 bg-primary rounded-full h-1/2"></div><div class="w-1 bg-primary rounded-full h-2/3"></div><div class="w-1 bg-primary rounded-full h-1/4"></div><div class="w-1 bg-primary rounded-full h-5/6"></div><div class="w-1 bg-primary rounded-full h-1/2"></div><div class="w-1 bg-primary rounded-full h-2/3"></div><div class="w-1 bg-primary rounded-full h-1/4"></div><div class="w-1 bg-primary rounded-full h-3/4"></div><div class="w-1 bg-primary rounded-full h-1/2"></div><div class="w-1 bg-primary rounded-full h-2/3"></div><div class="w-1 bg-primary rounded-full h-1/4"></div><div class="w-1 bg-primary rounded-full h-3/4"></div>
+</div>
+</div>
+<div class="w-full h-full p-6 font-mono text-xs text-primary/40 hidden group-hover:block transition-all">
+                        // Percussion Sequence Alpha-9<br/>
+                        osc1.freq = lfo(0.5).range(40, 60);<br/>
+                        gain.value = 0.8;
+                    </div>
+</div>
+</div>
+<!-- Track 2 (Active/Code View) -->
+<div class="bg-surface-container-low rounded-xl p-1 flex gap-1 h-48 overflow-hidden group">
+<div class="w-80 bg-surface-container-highest rounded-lg p-6 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-headline font-extrabold text-lg text-primary">PAD_SYNTH_02</h3>
+<button class="p-2 bg-[#894c5a] text-white rounded-full shadow-sm transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="visibility">visibility</span>
+</button>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-1 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-black tracking-widest uppercase">SOLO</button>
+<button class="px-4 py-1 rounded-full bg-surface-container-lowest text-[10px] font-black tracking-widest uppercase hover:bg-error-container hover:text-on-error-container transition-all">MUTE</button>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-[10px] font-bold uppercase opacity-50">
+<span>Volume</span>
+<span>+1.0dB</span>
+</div>
+<div class="relative h-8 bg-surface-dim rounded-full flex items-center px-1">
+<div class="h-1 bg-primary/20 absolute left-4 right-4 rounded-full"></div>
+<div class="w-8 h-8 bg-surface-container-lowest rounded-full shadow-md cursor-pointer absolute left-[85%] border-2 border-surface-variant flex items-center justify-center knob-glow">
+<div class="w-1 h-3 bg-secondary rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-highest rounded-lg p-6 font-mono text-xs text-on-surface-variant track-recessed overflow-y-auto">
+<span class="text-secondary font-bold">function</span> createAmbient() {<br/>
+                      <span class="text-tertiary">const</span> pad = <span class="text-primary">new</span> Oscillator(<span class="text-secondary">'sine'</span>);<br/>
+                      pad.harmonicity = 1.5;<br/>
+                      pad.detune = 12;<br/>
+                      <span class="text-tertiary">return</span> pad.start();<br/>
+                    }
+                </div>
+</div>
+<!-- Track 3 -->
+<div class="bg-surface-container-low rounded-xl p-1 flex gap-1 h-48 overflow-hidden group">
+<div class="w-80 bg-surface-container-highest rounded-lg p-6 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-headline font-extrabold text-lg text-primary">BASS_LINE_C</h3>
+<button class="p-2 bg-surface-container-lowest rounded-full shadow-sm hover:shadow-[0_0_12px_#ffe087] transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="visibility">visibility</span>
+</button>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-1 rounded-full bg-surface-container-lowest text-[10px] font-black tracking-widest uppercase hover:bg-secondary-container hover:text-on-secondary-container transition-all">SOLO</button>
+<button class="px-4 py-1 rounded-full bg-surface-container-lowest text-[10px] font-black tracking-widest uppercase hover:bg-error-container hover:text-on-error-container transition-all">MUTE</button>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-[10px] font-bold uppercase opacity-50">
+<span>Volume</span>
+<span>-6.0dB</span>
+</div>
+<div class="relative h-8 bg-surface-dim rounded-full flex items-center px-1">
+<div class="h-1 bg-primary/20 absolute left-4 right-4 rounded-full"></div>
+<div class="w-8 h-8 bg-surface-container-lowest rounded-full shadow-md cursor-pointer absolute left-[30%] border-2 border-surface-variant flex items-center justify-center knob-glow">
+<div class="w-1 h-3 bg-secondary rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-lowest/50 rounded-lg relative overflow-hidden track-recessed flex items-center">
+<div class="absolute inset-0 opacity-30 pointer-events-none">
+<div class="h-full w-full flex items-center justify-around px-4 gap-1">
+<div class="w-2 bg-secondary rounded-full h-1/3"></div><div class="w-2 bg-secondary rounded-full h-1/2"></div><div class="w-2 bg-secondary rounded-full h-1/3"></div><div class="w-2 bg-secondary rounded-full h-1/4"></div><div class="w-2 bg-secondary rounded-full h-1/3"></div><div class="w-2 bg-secondary rounded-full h-1/2"></div><div class="w-2 bg-secondary rounded-full h-1/3"></div><div class="w-2 bg-secondary rounded-full h-1/4"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SideNavBar / AI Copilot -->
+<aside class="fixed top-0 right-0 h-full w-80 flex flex-col p-6 z-40 bg-[#d6e8ce] dark:bg-[#2d312c] shadow-[-20px_0px_40px_rgba(17,31,15,0.06)] h-screen rounded-l-[3rem] border-l-0">
+<div class="flex flex-col h-full">
+<div class="flex items-center gap-4 mb-6">
+<div class="w-12 h-12 rounded-full bg-surface-container-lowest flex items-center justify-center shadow-inner">
+<span class="material-symbols-outlined text-tertiary" data-icon="smart_toy">smart_toy</span>
+</div>
+<div>
+<h2 class="font-manrope text-xs font-bold tracking-widest uppercase text-[#5c5f60]">AI Copilot</h2>
+<p class="text-[10px] opacity-60">Ready to mix</p>
+</div>
+</div>
+<!-- Chat History Area -->
+<div class="flex-1 space-y-4 overflow-y-auto mb-6 pr-1 chat-history">
+<div class="p-4 bg-surface-container-lowest rounded-2xl text-xs leading-relaxed text-on-surface-variant shadow-sm border border-outline-variant/10">
+                    Hey! I've analyzed your current rhythm track. Would you like me to suggest a bass line that complements the 118 BPM swing?
+                </div>
+<div class="p-4 bg-surface-container-low rounded-2xl text-xs leading-relaxed text-on-surface-variant italic">
+                    User: Yes, make it sound deep and industrial.
+                </div>
+<div class="p-4 bg-surface-container-lowest rounded-2xl text-xs leading-relaxed text-on-surface-variant shadow-sm border border-outline-variant/10">
+                    Generating physical bass model... <br/>Applying "Matte" texture compression.
+                </div>
+<div class="p-4 bg-surface-container-low rounded-2xl text-xs leading-relaxed text-on-surface-variant italic">
+                    User: Add more grit to the mid-range.
+                </div>
+<div class="p-4 bg-surface-container-lowest rounded-2xl text-xs leading-relaxed text-on-surface-variant shadow-sm border border-outline-variant/10">
+                    Applying saturation to 250Hz - 1kHz band... <br/>Recalculating harmonics for "BASS_LINE_C".
+                </div>
+</div>
+<!-- Chat Input Area -->
+<div class="mt-auto pt-4 border-t border-outline-variant/10">
+<div class="relative flex flex-col gap-2">
+<div class="relative">
+<textarea class="w-full bg-surface-container-lowest rounded-2xl p-4 pr-12 text-xs text-on-surface-variant border-none focus:ring-2 focus:ring-tertiary/20 resize-none shadow-inner placeholder:opacity-50" placeholder="Describe your sound..." rows="3"></textarea>
+<button class="absolute bottom-3 right-3 p-2 bg-primary text-white rounded-full flex items-center justify-center hover:shadow-[0_0_12px_#ffe087] transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="send">send</span>
+</button>
+</div>
+<button class="w-full py-3 bg-surface-container-high text-[#5c5f60] rounded-full font-headline font-black text-[10px] tracking-widest uppercase shadow-sm hover:bg-surface-container-highest transition-all active:scale-98">
+                        New Session
+                    </button>
+</div>
+</div>
+</div>
+</aside>
+</main>
+<!-- Bottom Navigation (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-surface-container-highest px-6 py-4 flex justify-between items-center z-50">
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" data-icon="equalizer">equalizer</span>
+<span class="text-[8px] font-black uppercase tracking-tighter">Mixer</span>
+</button>
+<button class="flex flex-col items-center gap-1 opacity-40">
+<span class="material-symbols-outlined" data-icon="layers">layers</span>
+<span class="text-[8px] font-black uppercase tracking-tighter">Arrange</span>
+</button>
+<button class="flex flex-col items-center gap-1 opacity-40">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+<span class="text-[8px] font-black uppercase tracking-tighter">AI</span>
+</button>
+<button class="flex flex-col items-center gap-1 opacity-40">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-[8px] font-black uppercase tracking-tighter">Profile</span>
+</button>
+</nav>
+<!-- Floating Action Button (Only on Home/Mixer) -->
+<div class="fixed bottom-10 left-10 z-50">
+<button class="w-16 h-16 bg-tertiary-fixed rounded-full shadow-2xl flex items-center justify-center group hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-on-tertiary-fixed text-3xl" data-icon="add">add</span>
+<div class="absolute left-full ml-4 px-4 py-2 bg-surface-container-lowest rounded-full whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity font-headline font-bold text-xs uppercase tracking-widest text-primary shadow-sm pointer-events-none">
+            Add Track
+        </div>
+</button>
+</div>
+</body></html>

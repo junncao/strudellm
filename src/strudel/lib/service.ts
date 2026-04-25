@@ -23,20 +23,17 @@ type CodeChangeCallback = (state: StrudelReplState) => void;
 
 type UpdateSource = "ai" | "user";
 
-export const DEFAULT_CODE = `// Welcome to StrudelLM!
-// Write patterns here or ask the AI for help
+export const DEFAULT_CODE = `// StrudelLM — Classic four-track demo. Hit Play to listen.
 
-// Example: Piano + drums with scope and pianoroll visualizations
-// slider(initial, min, max, step) is a built-in UI control
-stack(
-  note("c3 e3 g3 b3")
-    .s("piano")
-    .gain(slider(0.5, 0, 1, 0.01))
-    ._pianoroll({ fold: 1 }),
-  s("bd sd [bd bd] sd")
-    .gain(0.8)
-    ._scope({ height: 80 })
-)
+setCpm(120/4)
+
+$drums: s("bd ~ sd ~, ~ hh ~ [hh oh]").bank("RolandTR909").gain(0.85)
+
+$bass: note("c2 ~ f1 ~, ~ g1 ~ c2").s("sawtooth").lpf(500).gain(0.65)
+
+$guitar: note("<[c3,e3,g3] [f2,a2,c3] [g2,b2,d3] [c3,e3,g3]>").s("square").gain(0.2).release(0.3)
+
+$piano: note("e4 g4 ~ c5, ~ g4 e4 ~").s("piano").gain(0.3).room(0.3)
 `;
 
 const ALLOWED_KEYBINDINGS = ["codemirror", "vim", "emacs", "vscode"] as const;
@@ -691,6 +688,23 @@ const keybindings = getKeybindings();
   // ============================================
   // Playback Control
   // ============================================
+
+  /**
+   * Hot-swap the running pattern without stopping the scheduler.
+   * Use this for mute/solo/volume changes where you want near-instant response.
+   * The new gain values take effect within the scheduler's lookahead (~100-250ms).
+   * If the engine is not playing, just updates the code silently.
+   */
+  hotEvaluate = async (code: string): Promise<void> => {
+    if (!this.editorInstance) return;
+    this.setCode(code);
+    if (!this.isPlaying) return; // only hot-swap when playing; user can press play manually
+    try {
+      await this.editorInstance.evaluate();
+    } catch (error) {
+      this.captureSchedulerError(error);
+    }
+  };
 
   play = async (): Promise<void> => {
     this.registerGlobalErrorHandlers();

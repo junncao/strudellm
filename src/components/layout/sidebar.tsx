@@ -94,13 +94,13 @@ export function SidebarContent({ children }: { children: React.ReactNode }) {
   return (
     <div
       className={cn(
-        "h-full border-l border-border flex flex-col relative bg-background",
+        "h-full flex flex-col relative",
         {
           "transition-all duration-300": !isResizing,
           "cursor-col-resize select-none": isResizing
         },
       )}
-      style={{ width: sidebarWidth }}
+      style={{ width: sidebarWidth, background: "#d6e8ce", borderLeft: "none" }}
     >
       <ResizeHandle />
       {children}

@@ -598,6 +598,47 @@ canvas[id*="_widget__pianoroll_"] {
     animation-delay: -5s;
 }
 
+/* ── DAW Waveform Animation ── */
+@keyframes waveform-dance {
+  0%   { transform: scaleY(1); }
+  20%  { transform: scaleY(0.3); }
+  40%  { transform: scaleY(0.9); }
+  60%  { transform: scaleY(0.15); }
+  80%  { transform: scaleY(0.7); }
+  100% { transform: scaleY(1); }
+}
+.waveform-bar-active {
+  animation: waveform-dance 1.1s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* ── DAW Volume Fader ── */
+.daw-fader::-webkit-slider-thumb {
+    appearance: none;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+    background: white;
+    border: 2px solid #d6e8ce;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: box-shadow 0.15s;
+}
+.daw-fader:not(:disabled)::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 14px #ffe087, 0 1px 4px rgba(0,0,0,0.15);
+}
+.daw-fader::-moz-range-thumb {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+    background: white;
+    border: 2px solid #d6e8ce;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    cursor: pointer;
+}
+.daw-fader::-webkit-slider-runnable-track { background: transparent; }
+.daw-fader::-moz-range-track { background: transparent; }
+
 /* Respect reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
     .landing-glow-1,

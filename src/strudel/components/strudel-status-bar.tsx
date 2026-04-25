@@ -181,7 +181,7 @@ export function StrudelStatusBar() {
           </div>
         </button>
       )}
-      <div className="px-3 py-1.5 border-t border-border text-muted-foreground flex items-center justify-between">
+      <div className="px-4 py-1.5 text-[#5c5f60]/60 flex items-center justify-between" style={{ background: "#d6e8ce" }}>
         <div className="flex items-center gap-3">
           <button
             onClick={isPlaying ? stop : play}

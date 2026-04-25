@@ -28,6 +28,8 @@ import {
 import { StrudelRepl } from "@/strudel/components/strudel-repl";
 import { LoadingScreen } from "@/components/loading/loading-screen";
 import { ApiKeyMissing } from "@/components/api-key-missing";
+import { DawPanel } from "@/components/daw/daw-panel";
+import { TrackProvider } from "@/strudel/context/track-context";
 
 import { StrudelStorageSync } from "@/components/strudel-storage-sync";
 import { components, tools } from "@/lib/tambo";
@@ -322,13 +324,44 @@ function AppContent() {
 
   return (
     <Frame>
+      {/* Audio engine — kept off-screen so StrudelService can attach and play */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          left: "-9999px",
+          top: "-9999px",
+          width: "1px",
+          height: "1px",
+          overflow: "hidden",
+          pointerEvents: "none",
+        }}
+      >
+        <StrudelRepl />
+      </div>
+
       <Sidebar>
         <Main>
-          <StrudelRepl />
+          <DawPanel />
           <StrudelStatusBar />
         </Main>
 
         <SidebarContent>
+          {/* Sidebar header */}
+          <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: "1px solid rgba(196,200,191,0.3)" }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#e7f9de" }}>
+              <span className="text-sm">🤖</span>
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#5c5f60]" style={{ fontFamily: "Manrope, sans-serif" }}>
+                AI Copilot
+              </p>
+              <p className="text-[9px] text-[#5c5f60]/50">
+                {isGenerating ? "Generating..." : "Ready"}
+              </p>
+            </div>
+          </div>
+
           {/* Messages */}
           <ScrollableMessageContainer className="flex-1 p-3">
             <ThreadContent>
@@ -344,10 +377,10 @@ function AppContent() {
           </MessageSuggestions>
 
           {/* Input */}
-          <div className="p-3 border-t border-border">
+          <div className="p-3" style={{ borderTop: "1px solid rgba(196,200,191,0.3)" }}>
             <GenerationIndicator isGenerating={isGenerating} />
             <MessageInput userKey={readyUserKey}>
-              <MessageInputTextarea placeholder=">" />
+              <MessageInputTextarea placeholder="Describe your sound..." />
               <MessageInputToolbar>
                 <MessageInputNewThreadButton />
                 <MessageInputSubmitButton />
@@ -387,9 +420,11 @@ export default function ChatPage() {
     <LoadingContextProvider>
       <StrudelProvider>
         <StrudelStorageSync />
-        <TamboAuthedProvider apiKey={apiKey}>
-          <AppContent />
-        </TamboAuthedProvider>
+        <TrackProvider>
+          <TamboAuthedProvider apiKey={apiKey}>
+            <AppContent />
+          </TamboAuthedProvider>
+        </TrackProvider>
       </StrudelProvider>
     </LoadingContextProvider>
   );
