@@ -7,6 +7,7 @@ import {
   compileTracksToCode,
   addTrack,
 } from "@/strudel/lib/track-parser";
+import { type Tempo, withTempo } from "@/strudel/lib/tempo";
 import { StrudelService } from "@/strudel/lib/service";
 
 type TrackContextValue = {
@@ -15,6 +16,26 @@ type TrackContextValue = {
   setSolo: (trackId: string) => void;
   setVolume: (trackId: string, volume: number) => void;
   addNewTrack: (name: string) => void;
+  /**
+   * Update a single track's code from the per-track editor.
+   * - apply=false: only persist the draft into DAW state (no recompile, no
+   *   audio change). Use during typing so toggling the panel doesn't lose
+   *   work.
+   * - apply=true: persist AND recompile the full pattern, hot-evaluating
+   *   into the running scheduler. Use on blur / debounce flush.
+   */
+  updateTrackCode: (trackId: string, code: string, apply: boolean) => void;
+  /**
+   * Push a complete, full-pattern code string (i.e. the contents of the
+   * "View Code" dialog) into the REPL. The service's onStateChange echo will
+   * re-parse it back into tracks.
+   */
+  setRawCode: (code: string) => void;
+  /**
+   * Update the project tempo (bpm + beats per cycle). Rewrites the preamble's
+   * `setCpm(...)` line and hot-evaluates so the change is audible immediately.
+   */
+  setTempo: (tempo: Tempo) => void;
 };
 
 const TrackContext = React.createContext<TrackContextValue | null>(null);
@@ -43,12 +64,10 @@ export function TrackProvider({ children }: { children: React.ReactNode }) {
       setDawState((prev) => {
         if (prev.rawCode === code) return prev;
         const parsed = parseTracksFromCode(code);
-        // For existing tracks, preserve all user-controlled state (muted, soloed, volume).
-        // - muted/soloed: user toggle state, never overwritten by code parsing
-        // - volume: the "desired" volume when unmuted; gain(0) is injected for mute/solo
-        //   in compileTracksToCode, so the parsed gain would be 0 — we don't want that
-        //   to overwrite the user's actual volume setting.
-        // New tracks from AI get their parsed initial values (no existing entry).
+        // Preserve user-controlled fader state (muted, soloed, volume) across
+        // re-parses. Volume is a master post-multiplier (default 1.0), so even
+        // if the AI rewrites the in-pattern gain, the user's slider position
+        // stays put. Match by track name; new tracks from AI get defaults.
         if (parsed.isMultiTrack && prev.isMultiTrack) {
           const prevByName = new Map(prev.tracks.map((t) => [t.name, t]));
           parsed.tracks = parsed.tracks.map((t) => {
@@ -110,12 +129,21 @@ export function TrackProvider({ children }: { children: React.ReactNode }) {
 
   const setSolo = React.useCallback(
     (trackId: string) => {
+      // Exclusive solo: clicking SOLO on a track makes it the only audible
+      // track (clears solo on every other track). Clicking the same SOLO
+      // again releases it and restores the normal mute state across the
+      // board. compileTracksToCode then mutes any non-soloed track via
+      // .gain(0) when at least one solo is active.
       const prev = dawStateRef.current;
+      const target = prev.tracks.find((t) => t.id === trackId);
+      if (!target) return;
+      const willSolo = !target.soloed;
       const next = {
         ...prev,
-        tracks: prev.tracks.map((t) =>
-          t.id === trackId ? { ...t, soloed: !t.soloed } : t
-        ),
+        tracks: prev.tracks.map((t) => ({
+          ...t,
+          soloed: t.id === trackId ? willSolo : false,
+        })),
       };
       applyTracks(next);
     },
@@ -143,9 +171,75 @@ export function TrackProvider({ children }: { children: React.ReactNode }) {
     [applyTracks]
   );
 
+  const updateTrackCode = React.useCallback(
+    (trackId: string, code: string, apply: boolean) => {
+      const prev = dawStateRef.current;
+      const next = {
+        ...prev,
+        tracks: prev.tracks.map((t) =>
+          t.id === trackId ? { ...t, code } : t,
+        ),
+      };
+      if (apply) {
+        applyTracks(next);
+      } else {
+        // Persist draft only — keep rawCode and the running pattern untouched.
+        setDawState(next);
+      }
+    },
+    [applyTracks],
+  );
+
+  const setRawCode = React.useCallback(
+    (code: string) => {
+      // hotEvaluate sets the editor doc and re-evaluates if playing. The
+      // resulting onStateChange echo flows through loadState and re-parses
+      // tracks, so DAW state stays in sync.
+      service.hotEvaluate(code);
+    },
+    [service],
+  );
+
+  const setTempo = React.useCallback(
+    (tempo: Tempo) => {
+      const prev = dawStateRef.current;
+      const newPreamble = withTempo(prev.preamble, tempo);
+      if (newPreamble === prev.preamble) return;
+      const next = { ...prev, preamble: newPreamble };
+      if (next.isMultiTrack && next.tracks.length > 0) {
+        applyTracks(next);
+      } else {
+        // No labelled tracks yet — just stash the preamble locally and push
+        // it as raw code so the change is reflected if/when the user adds
+        // tracks or starts playing.
+        setDawState(next);
+        service.hotEvaluate(newPreamble);
+      }
+    },
+    [applyTracks, service],
+  );
+
   const value = React.useMemo<TrackContextValue>(
-    () => ({ dawState, setMute, setSolo, setVolume, addNewTrack }),
-    [dawState, setMute, setSolo, setVolume, addNewTrack]
+    () => ({
+      dawState,
+      setMute,
+      setSolo,
+      setVolume,
+      addNewTrack,
+      updateTrackCode,
+      setRawCode,
+      setTempo,
+    }),
+    [
+      dawState,
+      setMute,
+      setSolo,
+      setVolume,
+      addNewTrack,
+      updateTrackCode,
+      setRawCode,
+      setTempo,
+    ],
   );
 
   return <TrackContext.Provider value={value}>{children}</TrackContext.Provider>;

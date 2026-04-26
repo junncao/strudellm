@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  getToolUseBlock,
   Message,
   MessageContent,
   MessageImages,
@@ -9,10 +10,71 @@ import {
   ToolcallInfo,
   type messageVariants,
 } from "@/components/tambo/message";
+import {
+  checkHasContent,
+  getMessageImages,
+} from "@/lib/thread-hooks";
 import { cn } from "@/lib/utils";
 import { type TamboThreadMessage, useTambo } from "@tambo-ai/react";
 import { type VariantProps } from "class-variance-authority";
 import * as React from "react";
+
+/**
+ * Decide whether a message has anything visible to render. We hide messages
+ * that exist purely to carry tool plumbing (tool_use without surrounding text,
+ * tool_result echoes from the framework) — those would otherwise show up as
+ * empty bubbles. Messages with reasoning, images, components, or a still-
+ * streaming loading indicator are kept.
+ */
+function hasRenderableSurface(
+  message: TamboThreadMessage,
+  isStreamingThis: boolean,
+): boolean {
+  if (isStreamingThis) return true;
+  if (checkHasContent(message.content)) return true;
+  if (message.reasoning?.length) return true;
+  const images =
+    Array.isArray(message.content)
+      ? getMessageImages(
+          message.content as Parameters<typeof getMessageImages>[0],
+        )
+      : [];
+  if (images.length > 0) return true;
+  // Assistant tool calls render via ToolcallInfo (not the bubble).
+  if (message.role === "assistant" && getToolUseBlock(message)) return true;
+  // Assistant component blocks render via MessageRenderedComponentArea.
+  if (
+    message.role === "assistant" &&
+    Array.isArray(message.content) &&
+    message.content.some(
+      (block) => (block as { type?: string })?.type === "component",
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Whether the message has actual text/image content for the bubble itself.
+ * If false, we skip rendering MessageContent (the styled bubble) so tool-only
+ * messages don't produce empty bubbles above their ToolcallInfo.
+ */
+function hasBubbleContent(
+  message: TamboThreadMessage,
+  isStreamingThis: boolean,
+): boolean {
+  if (checkHasContent(message.content)) return true;
+  const images =
+    Array.isArray(message.content)
+      ? getMessageImages(
+          message.content as Parameters<typeof getMessageImages>[0],
+        )
+      : [];
+  if (images.length > 0) return true;
+  // While streaming, render the bubble so the loading dots have a home.
+  return isStreamingThis;
+}
 
 /**
  * @typedef ThreadContentContextValue
@@ -131,8 +193,12 @@ const ThreadContentMessages = React.forwardRef<
 >(({ className, hideComponents = false, ...props }, ref) => {
   const { messages, isGenerating, variant } = useThreadContentContext();
 
-  const filteredMessages = messages.filter(
+  const baseFiltered = messages.filter(
     (message) => message.role !== "system" && !message.parentMessageId,
+  );
+  const lastIndex = baseFiltered.length - 1;
+  const visibleMessages = baseFiltered.filter((message, index) =>
+    hasRenderableSurface(message, isGenerating && index === lastIndex),
   );
 
   return (
@@ -142,7 +208,10 @@ const ThreadContentMessages = React.forwardRef<
       data-slot="thread-content-messages"
       {...props}
     >
-      {filteredMessages.map((message, index) => {
+      {visibleMessages.map((message, index) => {
+        const isStreamingThis =
+          isGenerating && index === visibleMessages.length - 1;
+        const showBubble = hasBubbleContent(message, isStreamingThis);
         return (
           <div
             key={
@@ -155,7 +224,7 @@ const ThreadContentMessages = React.forwardRef<
               role={message.role === "assistant" ? "assistant" : "user"}
               message={message}
               variant={variant}
-              isLoading={isGenerating && index === filteredMessages.length - 1}
+              isLoading={isStreamingThis}
               className={cn(
                 "flex w-full",
                 message.role === "assistant" ? "justify-start" : "justify-end",
@@ -169,13 +238,16 @@ const ThreadContentMessages = React.forwardRef<
               >
                 <ReasoningInfo />
                 <MessageImages />
-                <MessageContent
-                  className={
-                    message.role === "assistant"
-                      ? "text-foreground"
-                      : "text-foreground bg-muted/50 px-2 py-1 rounded"
-                  }
-                />
+                {showBubble && (
+                  <MessageContent
+                    className={cn(
+                      "music-chat-bubble",
+                      message.role === "assistant"
+                        ? "music-chat-bubble--assistant"
+                        : "music-chat-bubble--user",
+                    )}
+                  />
+                )}
                 <ToolcallInfo />
                 {!hideComponents && <MessageRenderedComponentArea className="w-full" />}
               </div>

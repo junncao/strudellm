@@ -75,6 +75,154 @@ type Props = {
   anySoloed: boolean;
 };
 
+// Debounce window between the last keystroke and an automatic apply (recompile
+// + hot-evaluate). Short enough to feel "live", long enough that continuous
+// typing doesn't churn the audio scheduler or spam syntax errors mid-token.
+const TRACK_EDIT_APPLY_DEBOUNCE_MS = 400;
+
+function TrackCodePanel({ track }: { track: Track }) {
+  const { updateTrackCode } = useTracks();
+  const rootRef = React.useRef<HTMLDivElement>(null);
+  const editorRef = React.useRef<any>(null);
+  const isFocusedRef = React.useRef(false);
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Stable refs so the (mount-once) editor onChange callback always sees the
+  // current track id and the latest updateTrackCode reference.
+  const trackIdRef = React.useRef(track.id);
+  const updateTrackCodeRef = React.useRef(updateTrackCode);
+  React.useEffect(() => {
+    trackIdRef.current = track.id;
+  }, [track.id]);
+  React.useEffect(() => {
+    updateTrackCodeRef.current = updateTrackCode;
+  }, [updateTrackCode]);
+
+  const clearDebounce = React.useCallback(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+  }, []);
+
+  React.useEffect(() => {
+    let disposed = false;
+
+    const mountEditor = async () => {
+      if (!rootRef.current || editorRef.current) return;
+
+      const [{ initEditor }, { applyLightSyntaxTheme }] = await Promise.all([
+        import("@strudel/codemirror"),
+        import("@/strudel/lib/light-syntax-theme"),
+      ]);
+      if (disposed || !rootRef.current) return;
+
+      const editor = initEditor({
+        root: rootRef.current,
+        initialCode: track.code,
+        onChange: (update: {
+          docChanged: boolean;
+          focusChanged: boolean;
+          view: { hasFocus: boolean };
+          state: { doc: { toString(): string } };
+        }) => {
+          if (update.focusChanged) {
+            isFocusedRef.current = update.view.hasFocus;
+          }
+          if (update.docChanged) {
+            const nextCode = update.state.doc.toString();
+            // Persist draft immediately (no recompile) — guarantees that
+            // toggling the panel away or reloading after an apply doesn't
+            // lose the latest typed character.
+            updateTrackCodeRef.current(trackIdRef.current, nextCode, false);
+            // Debounce the actual apply so continuous typing doesn't
+            // re-evaluate Strudel on every keystroke.
+            clearDebounce();
+            debounceRef.current = setTimeout(() => {
+              debounceRef.current = null;
+              updateTrackCodeRef.current(trackIdRef.current, nextCode, true);
+            }, TRACK_EDIT_APPLY_DEBOUNCE_MS);
+          }
+          if (update.focusChanged && !update.view.hasFocus) {
+            // Blur — flush any pending debounce so the edit takes effect now.
+            clearDebounce();
+            updateTrackCodeRef.current(
+              trackIdRef.current,
+              update.state.doc.toString(),
+              true,
+            );
+          }
+        },
+      });
+
+      applyLightSyntaxTheme(editor);
+
+      rootRef.current.style.fontSize = "14px";
+      const scroller = rootRef.current.querySelector(".cm-scroller") as HTMLElement | null;
+      if (scroller) {
+        scroller.style.fontFamily =
+          "var(--font-jetbrains-mono), var(--font-fira-code), monospace";
+      }
+
+      editorRef.current = editor;
+    };
+
+    mountEditor();
+
+    return () => {
+      disposed = true;
+      // Flush any pending debounce on unmount so toggling the panel never
+      // loses an in-progress edit.
+      const editor = editorRef.current;
+      if (debounceRef.current && editor?.state?.doc) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+        updateTrackCodeRef.current(
+          trackIdRef.current,
+          editor.state.doc.toString(),
+          true,
+        );
+      }
+      editor?.destroy?.();
+      editorRef.current = null;
+    };
+  }, [clearDebounce]);
+
+  // Sync external code changes (e.g. AI updateRepl) into the editor — but
+  // only when the user isn't actively editing, otherwise we'd clobber the
+  // cursor mid-typing.
+  React.useEffect(() => {
+    if (isFocusedRef.current) return;
+    const editor = editorRef.current;
+    if (!editor?.dispatch || !editor.state?.doc) return;
+    const nextCode = track.code;
+    const currentCode = editor.state.doc.toString();
+    if (currentCode === nextCode) return;
+    editor.dispatch({
+      changes: {
+        from: 0,
+        to: editor.state.doc.length,
+        insert: nextCode,
+      },
+    });
+  }, [track.code]);
+
+  return (
+    <div className="track-code-panel flex h-full flex-col overflow-hidden rounded-[0.95rem] border border-[#d3dfcc] bg-[#f2faec]">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#d3dfcc] bg-[#edf8e6] px-3 py-1.5">
+        <span className="inline-flex h-2 w-2 rounded-full bg-[#f3b43f]" />
+        <span className="text-[9px] font-black uppercase tracking-[0.22em] text-[#6d7368]">
+          Live Coding
+        </span>
+      </div>
+      <div
+        ref={rootRef}
+        className="track-code-editor min-h-0 flex-1 overflow-hidden"
+      />
+    </div>
+  );
+}
+
 export function TrackCard({ track, anySoloed }: Props) {
   const { setMute, setSolo, setVolume } = useTracks();
   const { isPlaying } = useStrudel();
@@ -196,15 +344,8 @@ export function TrackCard({ track, anySoloed }: Props) {
         }}
       >
         {showCode ? (
-          /* Code view */
-          <div className="h-full p-4 overflow-auto">
-            <pre
-              className="text-[11px] font-mono leading-relaxed break-words whitespace-pre-wrap"
-              style={{ color: "#444841bb" }}
-            >
-              {track.code.trim()}
-            </pre>
-          </div>
+          /* Code view — fills the right pane edge-to-edge */
+          <TrackCodePanel track={track} />
         ) : (
           /* Waveform view */
           <Waveform playing={trackIsPlaying} accent={accent} />

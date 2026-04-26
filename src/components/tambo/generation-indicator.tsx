@@ -17,7 +17,7 @@ type Hint = {
 // Static list; not expected to change at runtime.
 const HINTS: Hint[] = [
   {
-    message: "Like Strudel LM? Give us a star",
+    message: "Like MorningDrift? Give us a star",
     href: "https://github.com/tambo-ai/strudellm",
   },
   {
@@ -84,7 +84,7 @@ export function GenerationIndicator({
   return (
     <div
       className={cn(
-        "h-6 min-w-0 flex items-center text-xs text-muted-foreground/80 pl-3",
+        "generation-indicator h-6 min-w-0 flex items-center text-xs pl-3",
         className,
       )}
       role="status"
@@ -93,15 +93,18 @@ export function GenerationIndicator({
     >
       <span className="flex items-center gap-2 truncate">
         {isGenerating && (
-          <span className="shrink-0 animate-pulse">Generating...</span>
+          <span className="generation-indicator__active shrink-0 inline-flex items-center gap-1.5 font-bold">
+            <span className="generation-indicator__dot" aria-hidden />
+            <span className="animate-pulse">Generating...</span>
+          </span>
         )}
         {showHint && hint && (
           <>
             {isGenerating && (
-              <span className="text-muted-foreground/40 shrink-0">—</span>
+              <span className="generation-indicator__sep shrink-0">—</span>
             )}
             <a
-              className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors truncate"
+              className="generation-indicator__hint inline-flex items-center gap-1 truncate"
               href={hint.href}
               target="_blank"
               rel="noopener noreferrer"

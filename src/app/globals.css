@@ -60,6 +60,13 @@
 }
 
 :root {
+    --font-geist-sans: "Inter", "Segoe UI", sans-serif;
+    --font-geist-mono: "SFMono-Regular", "Menlo", "Monaco", monospace;
+    --font-fira-code: "SFMono-Regular", "Menlo", "Monaco", monospace;
+    --font-jetbrains-mono: "SFMono-Regular", "Menlo", "Monaco", monospace;
+    --card-background: var(--theme-card);
+    --card-foreground: var(--theme-card-foreground);
+
     /* Default dark theme - Strudel-inspired colors */
     --theme-background: oklch(0.13 0.01 260);
     --theme-foreground: oklch(0.93 0 0);
@@ -409,6 +416,308 @@ Maps Strudel's internal CSS variables to our theme variables
         transparent
     ) !important;
 }
+
+.music-chat-shell [data-slot="message-suggestions-list"] {
+    gap: 0.625rem;
+    padding-bottom: 0.25rem;
+}
+
+.music-chat-shell [data-slot="message-suggestions-list"] [data-suggestion-id] {
+    border: 1px solid rgba(149, 167, 141, 0.42);
+    background: rgba(247, 255, 241, 0.92);
+    color: #4d5148;
+    box-shadow: 0 6px 16px rgba(92, 95, 96, 0.06);
+}
+
+.music-chat-shell
+    [data-slot="message-suggestions-list"]
+    [data-suggestion-id]:hover {
+    background: #fff8d9;
+    color: #3c3522;
+    border-color: rgba(243, 180, 63, 0.5);
+}
+
+.music-chat-shell
+    [data-slot="message-suggestions-list"]
+    [data-suggestion-id][disabled] {
+    background: rgba(235, 243, 229, 0.88);
+    color: rgba(92, 95, 96, 0.6);
+}
+
+.music-chat-shell [data-slot="message-input-form"] > div {
+    background: rgba(247, 255, 241, 0.94);
+    border-color: rgba(149, 167, 141, 0.38);
+    box-shadow: 0 10px 30px rgba(92, 95, 96, 0.08);
+}
+
+.music-chat-shell [data-slot="message-input-textarea"] {
+    background: transparent;
+    color: #4d5148;
+}
+
+.music-chat-shell [data-slot="message-input-textarea"]::placeholder {
+    color: rgba(92, 95, 96, 0.58);
+}
+
+.music-chat-shell [data-slot="message-input-new-thread"],
+.music-chat-shell [data-slot="message-input-submit"] {
+    border: 1px solid rgba(149, 167, 141, 0.38);
+    box-shadow: none;
+}
+
+.music-chat-shell [data-slot="message-input-new-thread"] {
+    background: rgba(232, 245, 224, 0.9);
+    color: #4d5148;
+}
+
+.music-chat-shell [data-slot="message-input-new-thread"]:hover {
+    background: rgba(220, 237, 209, 0.98);
+}
+
+.music-chat-shell [data-slot="message-input-submit"] {
+    background: linear-gradient(135deg, #ffe087 0%, #ffd26a 48%, #f3b43f 100%);
+    color: #2f2410;
+}
+
+.music-chat-shell [data-slot="message-input-submit"]:hover {
+    background: linear-gradient(135deg, #ffe8a7 0%, #ffd76f 48%, #efb13f 100%);
+}
+
+/* Generating… indicator — readable on the sage chat background. */
+.music-chat-shell .generation-indicator__active {
+    color: #3c3522;
+    letter-spacing: 0.02em;
+}
+
+.music-chat-shell .generation-indicator__dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: #f3b43f;
+    box-shadow: 0 0 8px rgba(243, 180, 63, 0.55);
+    animation: generation-dot-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes generation-dot-pulse {
+    0%,
+    100% {
+        opacity: 0.55;
+        transform: scale(0.85);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.music-chat-shell .generation-indicator__sep {
+    color: rgba(76, 80, 72, 0.45);
+}
+
+.music-chat-shell .generation-indicator__hint {
+    color: #4d5148;
+    transition: color 120ms ease;
+}
+
+.music-chat-shell .generation-indicator__hint:hover {
+    color: #2f2410;
+}
+
+/* Hide native number-input spin buttons in the tempo control — the up/down
+ * arrow keys (and Shift for ±5) handle stepping. */
+.tempo-control__input::-webkit-outer-spin-button,
+.tempo-control__input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.tempo-control__input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* Chat message bubbles — readable on the sage chat background (#d6e8ce). */
+.music-chat-bubble {
+    /* Sit cleanly inside the message column without inheriting page-wide rounding. */
+    border-radius: 1rem;
+}
+
+.music-chat-bubble--assistant {
+    /* AI: off-white card, soft outline so it reads as "from the assistant" */
+    background: rgba(247, 255, 241, 0.96);
+    color: #2f3a2c;
+    border: 1px solid rgba(149, 167, 141, 0.42);
+    box-shadow: 0 6px 18px rgba(92, 95, 96, 0.08);
+    padding: 0.75rem 1rem;
+}
+
+.music-chat-bubble--user {
+    /* User: warm cream with amber edge — matches the submit button accent */
+    background: linear-gradient(
+        180deg,
+        rgba(255, 248, 217, 0.98) 0%,
+        rgba(255, 232, 167, 0.98) 100%
+    );
+    color: #2f2410;
+    border: 1px solid rgba(243, 180, 63, 0.45);
+    box-shadow: 0 6px 18px rgba(115, 92, 0, 0.1);
+    padding: 0.6rem 1rem;
+}
+
+/* Inline markdown elements should pick up the bubble color, not theme defaults. */
+.music-chat-bubble--assistant a,
+.music-chat-bubble--user a {
+    color: #6d3543;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+.music-chat-bubble code {
+    background: rgba(0, 0, 0, 0.06);
+    color: inherit;
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.35rem;
+    font-family: var(--font-jetbrains-mono), var(--font-fira-code), monospace;
+    font-size: 0.92em;
+}
+
+.music-chat-bubble pre {
+    background: rgba(38, 49, 41, 0.92);
+    color: #e9f6e1;
+    padding: 0.75rem 0.9rem;
+    border-radius: 0.6rem;
+    overflow-x: auto;
+}
+
+.music-chat-bubble pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+/* Reasoning + tool-call chips — these were rendering at opacity-50 with the
+ * default theme foreground, which on the sage chat background was effectively
+ * invisible. Override inside the chat shell so the "Thinking…" / "Called
+ * updateRepl ✓" widgets are legible and feel intentional. */
+.music-chat-shell [data-slot="reasoning-info"],
+.music-chat-shell [data-slot="toolcall-info"] {
+    opacity: 1 !important;
+    color: #4d5148;
+    margin: 0.25rem 0;
+}
+
+.music-chat-shell [data-slot="reasoning-info"] > div,
+.music-chat-shell [data-slot="toolcall-info"] > div {
+    width: 100%;
+}
+
+/* The expandable trigger row */
+.music-chat-shell [data-slot="reasoning-info"] > div > button,
+.music-chat-shell [data-slot="toolcall-info"] > div > button {
+    background: rgba(247, 255, 241, 0.85);
+    border: 1px solid rgba(149, 167, 141, 0.42);
+    color: #4d5148;
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(92, 95, 96, 0.06);
+    transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.music-chat-shell [data-slot="reasoning-info"] > div > button:hover,
+.music-chat-shell [data-slot="toolcall-info"] > div > button:hover {
+    background: rgba(255, 248, 217, 0.95);
+    box-shadow: 0 2px 10px rgba(115, 92, 0, 0.12);
+}
+
+/* Status icons inside the trigger */
+.music-chat-shell [data-slot="toolcall-info"] svg {
+    width: 0.85rem;
+    height: 0.85rem;
+}
+
+.music-chat-shell [data-slot="toolcall-info"] .text-success {
+    color: #2d6a4f !important;
+}
+
+.music-chat-shell [data-slot="toolcall-info"] .text-destructive {
+    color: #9b1c1c !important;
+}
+
+/* Expanded body — keep it scannable */
+.music-chat-shell [data-slot="reasoning-info"] > div > div,
+.music-chat-shell [data-slot="toolcall-info"] > div > div {
+    color: #4d5148;
+    font-size: 0.78rem;
+}
+
+.music-chat-shell [data-slot="toolcall-info"] pre,
+.music-chat-shell [data-slot="reasoning-info"] pre {
+    background: rgba(38, 49, 41, 0.92);
+    color: #e9f6e1;
+    border-radius: 0.5rem;
+    padding: 0.6rem 0.75rem;
+}
+
+.music-chat-shell [data-slot="reasoning-info"] .bg-muted\/50,
+.music-chat-shell [data-slot="toolcall-info"] .bg-muted\/50 {
+    background: rgba(247, 255, 241, 0.85) !important;
+    color: #2f3a2c !important;
+    border: 1px solid rgba(149, 167, 141, 0.32);
+}
+
+.track-code-editor,
+.track-code-editor .cm-editor,
+.track-code-editor .cm-scroller {
+    height: 100%;
+}
+
+.track-code-editor .cm-editor {
+    background: transparent !important;
+    color: #263129 !important;
+    font-family: var(--font-jetbrains-mono), var(--font-fira-code), monospace;
+}
+
+.track-code-editor .cm-scroller {
+    font-family: var(--font-jetbrains-mono), var(--font-fira-code), monospace;
+    line-height: 1.75;
+}
+
+/* Make the content area fill the scroller so a single-line pattern still
+ * shows the editor surface (and click-to-focus) all the way down — no parent
+ * background bleeding through underneath. */
+.track-code-editor .cm-content {
+    min-height: 100%;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+    padding-left: 0.45rem;
+    color: #263129 !important;
+}
+
+.track-code-editor .cm-gutter {
+    min-height: 100%;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+}
+
+.track-code-editor .cm-gutters {
+    background: #eef6e7;
+    border-right: 1px solid #d3dfcc;
+    color: #8b9286;
+}
+
+.track-code-editor .cm-activeLine,
+.track-code-editor .cm-activeLineGutter {
+    background: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* Note: CodeMirror 6 generates hashed class names per HighlightStyle entry,
+ * so token-color overrides cannot be done from CSS reliably. Syntax colors
+ * for the DAW track panels are configured via `applyLightSyntaxTheme()` in
+ * src/strudel/lib/light-syntax-theme.ts (a high-precedence HighlightStyle
+ * extension attached after the editor mounts). */
 
 /* Autocomplete dropdown */
 .cm-tooltip-autocomplete {

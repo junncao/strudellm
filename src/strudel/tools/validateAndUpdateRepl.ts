@@ -157,8 +157,27 @@ async function validateSamples(
  */
 export const validateAndUpdateRepl = defineTool({
   name: "updateRepl",
-  description:
-    "Update the Strudel REPL with new pattern code. The code is validated by running it through Strudel's evaluator first. IMPORTANT: If success is false, you MUST immediately call this tool again with corrected code that fixes the error - do not ask the user or wait. The error message tells you exactly what went wrong. Common fixes: use listSamples to find valid sample names, fix syntax errors, ensure patterns return valid Strudel expressions. Make sure the code and sequences are in the same key/scale and don't produce anything that will sound dissonant.",
+  description: `Update the Strudel REPL with new pattern code. The code is validated by running it through Strudel's evaluator first.
+
+MULTI-TRACK FORMAT (REQUIRED for any musical output):
+- Always organize patterns into named tracks using \`$name: pattern\` labeled-statement syntax. Each label is one independent voice/lane in the DAW UI (drums, bass, lead, pad, etc.).
+- One track per logical voice. Do NOT bundle multiple voices into a single \`stack(...)\` inside one \`$name:\` block — that hides them from the DAW mute/solo/volume controls.
+- Track names must be lowercase identifiers ([a-z0-9_]+), unique within the code, and descriptive (e.g. \`$drums:\`, \`$bass:\`, \`$lead:\`, \`$pad:\`).
+- Put global setup (e.g. \`setCpm(120/4)\`, comments, \`samples(...)\`) BEFORE the first \`$name:\` line — it becomes the project preamble.
+- Do NOT add a \`.gain(...)\` per track for the purpose of "mixing" — the DAW's volume slider is a post-multiplier on top of your in-pattern gain. It's fine to use \`.gain()\` for musical reasons (sidechain, accent patterns), just know the user's slider multiplies on top.
+- Do NOT prefix track names with \`_\` (e.g. \`_$bd:\`) to mute — the user toggles mute via the UI.
+
+Example shape:
+\`\`\`
+setCpm(120/4)
+
+$drums: s("bd ~ sd ~, ~ hh ~ [hh oh]").bank("RolandTR909")
+$bass:  note("c2 ~ f1 ~, ~ g1 ~ c2").s("sawtooth").lpf(500)
+$lead:  note("<c4 e4 g4 c5>").s("square").release(0.3)
+\`\`\`
+
+ERROR HANDLING:
+If success is false, you MUST immediately call this tool again with corrected code that fixes the error — do not ask the user or wait. Common fixes: use listSamples to find valid sample names, fix syntax errors, ensure patterns return valid Strudel expressions. Keep all voices in the same key/scale to avoid dissonance.`,
   tool: async ({ code }) => {
     await service.init();
 

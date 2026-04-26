@@ -367,6 +367,29 @@ export class StrudelService {
     );
   }
 
+  private isNoteParsingErrorMessage(message: string): boolean {
+    return message.startsWith("not a note:");
+  }
+
+  /**
+   * Transient JS parser errors that fire while the user is mid-typing in the
+   * track / full-code editors (debounced hot-evaluate sees half-written
+   * strings, unbalanced brackets, etc.). Strudel already records these into
+   * its evalError state — we only filter to keep them out of the dev console
+   * overlay until the user finishes typing.
+   */
+  private isSyntaxErrorMessage(message: string): boolean {
+    const lower = message.toLowerCase();
+    return (
+      lower.includes("unterminated") ||
+      lower.includes("unexpected token") ||
+      lower.includes("unexpected end of") ||
+      lower.includes("invalid or unexpected token") ||
+      // acorn / babel commonly emit "Missing semicolon", "Missing initializer"
+      lower.startsWith("missing ")
+    );
+  }
+
   private extractMissingSampleName(message: string): string | null {
     // Common formats:
     // "sound supersquare not found! Is it loaded?"
@@ -383,7 +406,10 @@ export class StrudelService {
 
   private isResourceErrorMessage(message: string): boolean {
     return (
-      this.isSampleErrorMessage(message) || this.isAudioWorkletErrorMessage(message)
+      this.isSampleErrorMessage(message) ||
+      this.isAudioWorkletErrorMessage(message) ||
+      this.isNoteParsingErrorMessage(message) ||
+      this.isSyntaxErrorMessage(message)
     );
   }
 
@@ -490,14 +516,14 @@ export class StrudelService {
     const { setTheme } = await import("@strudel/draw");
 
     const themeSettings = {
-      background: "var(--card-background)",
-      foreground: "var(--card-foreground)",
+      background: "var(--color-card)",
+      foreground: "var(--color-card-foreground)",
       caret: "var(--muted-foreground)",
       selection: "color-mix(in oklch, var(--primary) 20%, transparent)",
       selectionMatch: "color-mix(in oklch, var(--primary) 20%, transparent)",
       lineHighlight: "color-mix(in oklch, var(--primary) 20%, transparent)",
       lineBackground:
-        "color-mix(in oklch, var(--card-foreground) 20%, transparent)",
+        "color-mix(in oklch, var(--color-card-foreground) 20%, transparent)",
       gutterBackground: "transparent",
       gutterForeground: "var(--muted-foreground)",
     };

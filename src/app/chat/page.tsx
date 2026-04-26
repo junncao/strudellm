@@ -54,6 +54,7 @@ import { StrudelStatusBar } from "@/strudel/components/strudel-status-bar";
 import { StrudelService } from "@/strudel/lib/service";
 import { BetaModal } from "@/components/beta-modal";
 import { useSession } from "@/lib/auth-client";
+import { AudioWaveform } from "lucide-react";
 
 const BETA_MODAL_SHOWN_KEY = "strudel-beta-modal-shown-v1";
 
@@ -347,46 +348,69 @@ function AppContent() {
         </Main>
 
         <SidebarContent>
-          {/* Sidebar header */}
-          <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: "1px solid rgba(196,200,191,0.3)" }}>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#e7f9de" }}>
-              <span className="text-sm">🤖</span>
+          <div className="music-chat-shell flex h-full flex-col">
+            {/* Sidebar header */}
+            <div
+              className="flex items-center gap-3 px-4 py-3"
+              style={{ borderBottom: "1px solid rgba(196,200,191,0.3)" }}
+            >
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-full"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #ffe087 0%, #ffd26a 45%, #f3b43f 100%)",
+                  boxShadow: "0 8px 18px rgba(115,92,0,0.18)",
+                }}
+              >
+                <AudioWaveform className="h-5 w-5 text-[#2f2410]" />
+              </div>
+              <div>
+                <p
+                  className="text-[10px] font-black uppercase tracking-widest text-[#5c5f60]"
+                  style={{ fontFamily: "Manrope, sans-serif" }}
+                >
+                  Music Copilot
+                </p>
+                <p
+                  className="text-sm font-semibold text-[#4d5148]"
+                  style={{ fontFamily: "Manrope, sans-serif" }}
+                >
+                  {isGenerating
+                    ? "Shaping Your Next Pattern"
+                    : "Start Music Drifting"}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#5c5f60]" style={{ fontFamily: "Manrope, sans-serif" }}>
-                AI Copilot
-              </p>
-              <p className="text-[9px] text-[#5c5f60]/50">
-                {isGenerating ? "Generating..." : "Ready"}
-              </p>
+
+            {/* Messages */}
+            <ScrollableMessageContainer className="flex-1 p-3">
+              <ThreadContent>
+                <ThreadContentMessages />
+              </ThreadContent>
+            </ScrollableMessageContainer>
+
+            {/* Suggestions */}
+            <MessageSuggestions initialSuggestions={strudelSuggestions}>
+              <div className="px-3 pb-2">
+                <MessageSuggestionsList />
+              </div>
+            </MessageSuggestions>
+
+            {/* Input */}
+            <div
+              className="p-3"
+              style={{ borderTop: "1px solid rgba(196,200,191,0.3)" }}
+            >
+              <GenerationIndicator isGenerating={isGenerating} />
+              <MessageInput userKey={readyUserKey}>
+                <MessageInputTextarea placeholder="Describe your sound..." />
+                <MessageInputToolbar>
+                  <MessageInputNewThreadButton />
+                  <MessageInputSubmitButton />
+                </MessageInputToolbar>
+                <MessageInputError />
+              </MessageInput>
             </div>
-          </div>
-
-          {/* Messages */}
-          <ScrollableMessageContainer className="flex-1 p-3">
-            <ThreadContent>
-              <ThreadContentMessages />
-            </ThreadContent>
-          </ScrollableMessageContainer>
-
-          {/* Suggestions */}
-          <MessageSuggestions initialSuggestions={strudelSuggestions}>
-            <div className="px-3 pb-2">
-              <MessageSuggestionsList />
-            </div>
-          </MessageSuggestions>
-
-          {/* Input */}
-          <div className="p-3" style={{ borderTop: "1px solid rgba(196,200,191,0.3)" }}>
-            <GenerationIndicator isGenerating={isGenerating} />
-            <MessageInput userKey={readyUserKey}>
-              <MessageInputTextarea placeholder="Describe your sound..." />
-              <MessageInputToolbar>
-                <MessageInputNewThreadButton />
-                <MessageInputSubmitButton />
-              </MessageInputToolbar>
-              <MessageInputError />
-            </MessageInput>
           </div>
         </SidebarContent>
       </Sidebar>

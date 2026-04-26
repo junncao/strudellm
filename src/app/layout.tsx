@@ -1,33 +1,16 @@
-import { Geist, Geist_Mono, Fira_Code, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import type { Metadata } from "next";
 import "./globals.css";
 import { STORED_THEME_IDS, THEME_STORAGE_KEY } from "@/lib/editor-theme";
 
 export const metadata: Metadata = {
-  title: "StrudelLM - Live Coding with AI",
-  description: "Live coding music with AI assistance powered by Strudel",
+  title: "MorningDrift - Live Coding Music",
+  description: "Live coding music editor with AI assistance",
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/apple-touch-icon.svg",
+  },
 };
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const firaCode = Fira_Code({
-  variable: "--font-fira-code",
-  subsets: ["latin"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
-});
 
 function getThemeBootstrapScript(): string {
   return `(() => {
@@ -60,11 +43,7 @@ export default function RootLayout({
           {getThemeBootstrapScript()}
         </Script>
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${firaCode.variable} ${jetbrainsMono.variable} antialiased`}
-      >
-        {children}
-      </body>
+      <body className="font-sans antialiased">{children}</body>
     </html>
   );
 }

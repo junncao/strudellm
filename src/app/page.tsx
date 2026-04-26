@@ -5,11 +5,11 @@ import Link from "next/link";
 import { HeroDemoVideo } from "@/components/landing/hero-demo-video";
 
 export const metadata: Metadata = {
-  title: "StrudelLM - AI-Powered Live Coding Music",
+  title: "MorningDrift - Live Coding Music",
   description:
-    "Create music with AI assistance using Strudel, the live coding environment. Generate beats, melodies, and soundscapes through natural language.",
+    "Create music with AI assistance with live coding, the live coding environment. Generate beats, melodies, and soundscapes through natural language.",
   keywords: [
-    "strudel",
+    "morning drift",
     "live coding",
     "music",
     "AI",
@@ -18,18 +18,18 @@ export const metadata: Metadata = {
     "tidal cycles",
   ],
   openGraph: {
-    title: "StrudelLM - AI-Powered Live Coding Music",
+    title: "MorningDrift - Live Coding Music",
     description:
-      "Create music with AI assistance using Strudel, the live coding environment.",
+      "Create music with AI assistance with live coding, the live coding environment.",
     type: "website",
     url: "https://strudel.tambo.co",
-    siteName: "StrudelLM",
+    siteName: "MorningDrift",
   },
   twitter: {
     card: "summary_large_image",
-    title: "StrudelLM - AI-Powered Live Coding Music",
+    title: "MorningDrift - Live Coding Music",
     description:
-      "Create music with AI assistance using Strudel, the live coding environment.",
+      "Create music with AI assistance with live coding, the live coding environment.",
   },
 };
 
@@ -50,19 +50,19 @@ export default function LandingPage() {
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           {/* Logo/Title */}
           <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
-            <span className="text-success">Strudel</span>
-            <span className="text-foreground">LM</span>
+            <span className="text-success">Morning</span>
+            <span className="text-foreground">Drift</span>
           </h1>
 
           {/* Tagline */}
           <p className="text-xl md:text-2xl text-muted-foreground mb-4 max-w-2xl mx-auto">
-            Live coding music with AI assistance
+            Live coding music editor with AI assistance
           </p>
 
           {/* Description */}
           <p className="text-base md:text-lg text-muted-foreground/80 mb-12 max-w-xl mx-auto leading-relaxed">
-            Generate beats, melodies, and soundscapes through natural language.
-            Powered by Strudel and AI.
+            Create beats, melodies, and soundscapes through natural language.
+            Powered by AI.
           </p>
 
           <HeroDemoVideo />
@@ -105,7 +105,7 @@ export default function LandingPage() {
             />
             <FeatureCard
               title="Learn by Doing"
-              description="Explore Strudel patterns and techniques with AI guidance."
+              description="Explore live coding patterns and techniques with AI guidance."
             />
           </div>
         </div>
@@ -132,7 +132,7 @@ export default function LandingPage() {
             Open Source
           </h2>
           <p className="text-muted-foreground mb-6 leading-relaxed">
-            StrudelLM is completely open source. Check out the code, run it
+            MorningDrift is completely open source. Check out the code, run it
             yourself, or contribute to the project.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -187,7 +187,7 @@ export default function LandingPage() {
             Built by the Tambo team
           </p>
           <p className="text-muted-foreground mb-6">
-            Interested in building AI-powered apps like StrudelLM? Check out
+            Interested in building AI-powered apps like MorningDrift? Check out
             Tambo.
           </p>
           <a

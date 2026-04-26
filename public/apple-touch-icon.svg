@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none">
+  <!-- Background -->
+  <rect width="180" height="180" rx="40" fill="#ecffe4"/>
+
+  <!-- Abstract musical note with flowing lines -->
+  <path d="M90 45V135M90 135L65 160M90 135L115 160" stroke="#2d6a4f" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Flowing wave lines representing live coding -->
+  <path d="M30 90Q50 70 70 90Q90 110 110 90Q130 70 150 90" stroke="#d6e8ce" stroke-width="8" stroke-linecap="round"/>
+  <path d="M25 110Q45 90 65 110Q85 130 105 110Q125 90 145 110" stroke="#5c5f60" stroke-width="5" stroke-linecap="round"/>
+  <path d="M35 70Q55 50 75 70Q95 90 115 70Q135 50 155 70" stroke="#2d6a4f" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Small dot representing creativity/spark -->
+  <circle cx="150" cy="70" r="8" fill="#ffe087"/>
+
+  <!-- Subtle glow effect -->
+  <circle cx="90" cy="90" r="70" fill="#d6e8ce" fill-opacity="0.15"/>
+</svg>

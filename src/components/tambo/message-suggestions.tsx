@@ -316,6 +316,12 @@ const MessageSuggestionsList = React.forwardRef<
   // Create placeholder suggestions when there are no real suggestions
   const placeholders = Array(3).fill(null);
 
+  // Hide the row entirely when there's nothing to show — avoids leaving an
+  // empty 2.5rem strip with three pulsing placeholders sitting under the chat.
+  if (suggestions.length === 0 && !isGenerating) {
+    return null;
+  }
+
   return (
     <div
       ref={ref}
@@ -359,7 +365,10 @@ const MessageSuggestionsList = React.forwardRef<
               </button>
             </Tooltip>
           ))
-        : // Render placeholder buttons when no suggestions are available
+        : // Show shimmer placeholders only while suggestions are actively
+          // being generated. Once generation finishes with no results, render
+          // nothing — otherwise the placeholders sit forever as empty bubbles.
+          isGenerating &&
           placeholders.map((_, index) => (
             <div
               key={`placeholder-${index}`}

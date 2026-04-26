@@ -4,12 +4,16 @@ import * as React from "react";
 import { useTracks } from "@/strudel/context/track-context";
 import { TrackCard } from "./track-card";
 import { AddTrackDialog } from "./add-track-dialog";
-import { Plus } from "lucide-react";
+import { FullCodeDialog } from "./full-code-dialog";
+import { TempoControl } from "./tempo-control";
+import { Code2, Plus } from "lucide-react";
 
 export function DawPanel() {
   const { dawState } = useTracks();
   const [showAddDialog, setShowAddDialog] = React.useState(false);
+  const [showFullCode, setShowFullCode] = React.useState(false);
   const anySoloed = dawState.tracks.some((t) => t.soloed);
+  const hasCode = dawState.rawCode.trim().length > 0;
 
   return (
     <div
@@ -17,23 +21,59 @@ export function DawPanel() {
       style={{ background: "#ecffe4" }}
     >
       {/* Project header */}
-      <div className="px-6 pt-5 pb-3 shrink-0">
-        <h1
-          className="text-3xl font-black tracking-tighter text-[#5c5f60]"
-          style={{ fontFamily: "Manrope, sans-serif" }}
-        >
-          {dawState.tracks.length > 0
-            ? `${dawState.tracks.length} Track${dawState.tracks.length !== 1 ? "s" : ""}`
-            : "Project"}
-        </h1>
-        <p
-          className="text-[10px] font-bold uppercase tracking-widest mt-0.5"
-          style={{ color: "#5c5f60", opacity: 0.45 }}
-        >
-          {dawState.preamble.trim()
-            ? dawState.preamble.trim()
-            : "Ask the AI to generate music"}
-        </p>
+      <div className="px-6 pt-5 pb-3 shrink-0 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1
+            className="text-3xl font-black tracking-tighter text-[#5c5f60]"
+            style={{ fontFamily: "Manrope, sans-serif" }}
+          >
+            {dawState.tracks.length > 0
+              ? `${dawState.tracks.length} Track${dawState.tracks.length !== 1 ? "s" : ""}`
+              : "Project"}
+          </h1>
+          <p
+            className="text-[10px] font-bold uppercase tracking-widest mt-0.5"
+            style={{ color: "#5c5f60", opacity: 0.45 }}
+          >
+            {dawState.preamble.trim()
+              ? dawState.preamble.trim()
+              : "Ask the AI to generate music"}
+          </p>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2.5">
+          {/* Tempo control — BPM / beats-per-cycle, edits the preamble's setCpm() */}
+          <TempoControl />
+
+          {/* View full code button */}
+          <button
+            onClick={() => setShowFullCode(true)}
+            disabled={!hasCode}
+            className="group flex items-center gap-2 px-4 py-2 rounded-full transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              background: "rgba(255,255,255,0.7)",
+              color: "#5c5f60",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+              fontFamily: "Manrope, sans-serif",
+            }}
+            onMouseEnter={(e) => {
+              if (!hasCode) return;
+              (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                "0 0 14px #ffe087, 0 2px 8px rgba(0,0,0,0.08)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                "0 2px 8px rgba(0,0,0,0.06)";
+            }}
+            title="View full code"
+            aria-label="View full code"
+          >
+            <Code2 className="w-4 h-4" />
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              View Code
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Track list */}
@@ -82,6 +122,10 @@ export function DawPanel() {
 
       {showAddDialog && (
         <AddTrackDialog onClose={() => setShowAddDialog(false)} />
+      )}
+
+      {showFullCode && (
+        <FullCodeDialog onClose={() => setShowFullCode(false)} />
       )}
     </div>
   );

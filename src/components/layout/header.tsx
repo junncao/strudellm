@@ -25,14 +25,8 @@ export function Header() {
             className="text-lg font-black tracking-tighter text-[#5c5f60]"
             style={{ fontFamily: "Manrope, sans-serif" }}
           >
-            <span style={{ color: "#2d6a4f" }}>Strudel</span>LM
+            <span style={{ color: "#2d6a4f" }}>Morning</span>Drift
           </h1>
-          <button
-            onClick={() => setShowInfoModal(true)}
-            className="px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-[#5c5f60]/60 bg-[#d6e8ce] rounded-full hover:bg-[#c4c8bf] transition-colors"
-          >
-            Open Source
-          </button>
         </div>
 
         {/* Center: transport controls */}
