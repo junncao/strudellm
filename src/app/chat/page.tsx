@@ -3,11 +3,11 @@
 import {
   MessageInput,
   MessageInputError,
-  MessageInputNewThreadButton,
   MessageInputSubmitButton,
   MessageInputTextarea,
   MessageInputToolbar,
 } from "@/components/tambo/message-input";
+import { ContextFileButton } from "@/components/tambo/context-file-button";
 import {
   MessageSuggestions,
   MessageSuggestionsList,
@@ -26,7 +26,7 @@ import {
   ThreadHistoryList,
 } from "@/components/tambo/thread-history";
 import { StrudelRepl } from "@/strudel/components/strudel-repl";
-import { LoadingScreen } from "@/components/loading/loading-screen";
+import { FloatingLoader } from "@/components/loading/floating-loader";
 import { ApiKeyMissing } from "@/components/api-key-missing";
 import { DawPanel } from "@/components/daw/daw-panel";
 import { TrackProvider } from "@/strudel/context/track-context";
@@ -230,6 +230,20 @@ const strudelSuggestions: Suggestion[] = [
   },
 ];
 
+/**
+ * Latching hook that returns `true` once `value` has been observed as truthy
+ * at least once, and stays `true` thereafter. Useful for "first ready" gates
+ * we don't want to bounce off transient flips (e.g. better-auth refetching
+ * on tab refocus).
+ */
+function useLatchedTrue(value: boolean): boolean {
+  const [latched, setLatched] = React.useState(false);
+  React.useEffect(() => {
+    if (value) setLatched(true);
+  }, [value]);
+  return latched;
+}
+
 function AppContent() {
   const [threadInitialized, setThreadInitialized] = React.useState(false);
   const [showBetaModal, setShowBetaModal] = React.useState(false);
@@ -314,17 +328,26 @@ function AppContent() {
   // Thread/REPL association is no longer needed with single-REPL model
   // All threads share the same REPL code
 
-  // Wait for auth and user key to be fully ready before rendering UI
-  if (!userKeyAndIdentityReady) {
-    return <LoadingScreen />;
-  }
-
-  if (isPending || !strudelIsReady || !thread) {
-    return <LoadingScreen />;
-  }
+  // We no longer return a full-screen loader for these states. Instead the
+  // chat UI renders persistently and a small floating chip in the top center
+  // surfaces what's happening. This avoids re-flashing a giant splash screen
+  // every time a tab refocus / background refetch flips one of these flags.
+  //
+  // Crucially: once the app has fully booted once, we suppress the chip on
+  // subsequent tab refocus / background refetch flickers. better-auth
+  // refetches the session every time the tab regains focus, which briefly
+  // re-flips `userKeyAndIdentityReady` to false. Showing the chip every time
+  // produces a visible blink. The cached state is still valid — we just
+  // wait for it to resettle silently.
+  const isFullyReady =
+    userKeyAndIdentityReady && !isPending && strudelIsReady && !!thread;
+  const bootCompleted = useLatchedTrue(isFullyReady);
+  const isInitializing = !isFullyReady && !bootCompleted;
 
   return (
     <Frame>
+      {isInitializing && <FloatingLoader mode="overlay" forced />}
+
       {/* Audio engine — kept off-screen so StrudelService can attach and play */}
       <div
         aria-hidden="true"
@@ -405,7 +428,7 @@ function AppContent() {
               <MessageInput userKey={readyUserKey}>
                 <MessageInputTextarea placeholder="Describe your sound..." />
                 <MessageInputToolbar>
-                  <MessageInputNewThreadButton />
+                  <ContextFileButton />
                   <MessageInputSubmitButton />
                 </MessageInputToolbar>
                 <MessageInputError />
@@ -468,10 +491,21 @@ function TamboAuthedProvider({
     console.warn("TamboAuthedProvider: userId present but userToken missing");
   }
 
-  // Wait for Better Auth session to be fully resolved before initializing TamboProvider.
-  // This prevents 401 errors from attempting token exchange with an undefined/stale token.
-  if (isPending) {
-    return <LoadingScreen />;
+  // Track whether better-auth has resolved the session at least once.
+  // better-auth defaults to `refetchOnWindowFocus: true`, so every tab
+  // refocus briefly flips `isPending` back to true. If we returned the
+  // loader here on every flip, TamboProvider would unmount and the entire
+  // app subtree (including StrudelRepl) would be destroyed and rebuilt —
+  // which wipes React state (play state, mute/solo, volume sliders) and
+  // creates a fresh editor instance whose `repl.state.started` is `false`,
+  // even though the audio worklet is still playing in the background.
+  //
+  // Solution: only show the cold-start splash before the *first* successful
+  // resolution. After that, keep TamboProvider mounted and let it receive
+  // the new userToken/userKey through props on subsequent refetches.
+  const everResolved = useLatchedTrue(!isPending);
+  if (isPending && !everResolved) {
+    return <FloatingLoader mode="page" forced message="Connecting…" />;
   }
 
   return (

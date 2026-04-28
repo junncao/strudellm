@@ -256,6 +256,15 @@ export class StrudelService {
   setCode(code: string): void {
     if (this.editorInstance) {
       this.editorInstance.setCode(code);
+      // StrudelMirror.setCode only dispatches a doc change to CodeMirror — it
+      // does NOT call repl.updateState, so subscribers wired to onStateChange
+      // never see the new code unless evaluate() runs. That breaks
+      // localStorage persistence whenever the user edits while paused (e.g.
+      // typing in a track panel without pressing Play): the change lives in
+      // the editor doc only, the storage sync never receives it, and on
+      // reload we fall back to the initial demo.
+      // Notify here so every code update funnels through the same channel.
+      this.notifyStateChange({ code });
     }
   }
 

@@ -459,28 +459,77 @@ Maps Strudel's internal CSS variables to our theme variables
     color: rgba(92, 95, 96, 0.58);
 }
 
-.music-chat-shell [data-slot="message-input-new-thread"],
-.music-chat-shell [data-slot="message-input-submit"] {
-    border: 1px solid rgba(149, 167, 141, 0.38);
-    box-shadow: none;
-}
-
 .music-chat-shell [data-slot="message-input-new-thread"] {
     background: rgba(232, 245, 224, 0.9);
     color: #4d5148;
+    border: 1px solid rgba(149, 167, 141, 0.38);
+    box-shadow: none;
 }
 
 .music-chat-shell [data-slot="message-input-new-thread"]:hover {
     background: rgba(220, 237, 209, 0.98);
 }
 
-.music-chat-shell [data-slot="message-input-submit"] {
-    background: linear-gradient(135deg, #ffe087 0%, #ffd26a 48%, #f3b43f 100%);
+/* Send button — flat, pill-shaped, with a soft amber glow that lifts on
+ * hover and a small icon nudge to give it some life. */
+.music-chat-shell [data-slot="message-input-submit"],
+.music-chat-shell [data-slot="message-input-cancel"] {
+    background: #ffd26a;
     color: #2f2410;
+    border: 0;
+    border-radius: 999px !important;
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.6) inset,
+        0 1px 2px rgba(115, 92, 0, 0.18),
+        0 6px 16px rgba(243, 180, 63, 0.25);
+    transition:
+        transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+        background 140ms ease,
+        box-shadow 160ms ease;
 }
 
-.music-chat-shell [data-slot="message-input-submit"]:hover {
-    background: linear-gradient(135deg, #ffe8a7 0%, #ffd76f 48%, #efb13f 100%);
+.music-chat-shell [data-slot="message-input-submit"]:hover:not(:disabled),
+.music-chat-shell [data-slot="message-input-cancel"]:hover:not(:disabled) {
+    background: #ffc44a;
+    transform: translateY(-1px);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.7) inset,
+        0 2px 4px rgba(115, 92, 0, 0.22),
+        0 10px 22px rgba(243, 180, 63, 0.42);
+}
+
+.music-chat-shell [data-slot="message-input-submit"]:active:not(:disabled),
+.music-chat-shell [data-slot="message-input-cancel"]:active:not(:disabled) {
+    transform: translateY(0);
+    transition-duration: 80ms;
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.5) inset,
+        0 1px 2px rgba(115, 92, 0, 0.2);
+}
+
+.music-chat-shell [data-slot="message-input-submit"]:focus-visible,
+.music-chat-shell [data-slot="message-input-cancel"]:focus-visible {
+    outline: none;
+    box-shadow:
+        0 0 0 3px rgba(243, 180, 63, 0.45),
+        0 1px 2px rgba(115, 92, 0, 0.2),
+        0 6px 16px rgba(243, 180, 63, 0.3);
+}
+
+/* Animate the arrow on the submit button — slight upward nudge on hover. */
+.music-chat-shell [data-slot="message-input-submit"] svg {
+    transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.music-chat-shell [data-slot="message-input-submit"]:hover:not(:disabled) svg {
+    transform: translateY(-1.5px);
+}
+
+.music-chat-shell [data-slot="message-input-submit"]:disabled,
+.music-chat-shell [data-slot="message-input-cancel"]:disabled {
+    background: rgba(220, 220, 210, 0.85);
+    color: #8a8c84;
+    box-shadow: none;
 }
 
 /* Generating… indicator — readable on the sage chat background. */
@@ -503,6 +552,18 @@ Maps Strudel's internal CSS variables to our theme variables
     100% {
         opacity: 0.55;
         transform: scale(0.85);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes morningdrift-loader-dot {
+    0%,
+    100% {
+        opacity: 0.35;
+        transform: scale(0.8);
     }
     50% {
         opacity: 1;
