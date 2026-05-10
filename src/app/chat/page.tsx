@@ -3,6 +3,7 @@
 import {
   MessageInput,
   MessageInputError,
+  MessageInputMusicGeneFilter,
   MessageInputSubmitButton,
   MessageInputTextarea,
   MessageInputToolbar,
@@ -426,6 +427,7 @@ function AppContent() {
             >
               <GenerationIndicator isGenerating={isGenerating} />
               <MessageInput userKey={readyUserKey}>
+                <MessageInputMusicGeneFilter />
                 <MessageInputTextarea placeholder="Describe your sound..." />
                 <MessageInputToolbar>
                   <ContextFileButton />

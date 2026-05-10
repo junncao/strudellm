@@ -7,6 +7,11 @@ import {
 } from "@/components/tambo/mcp-components";
 import { McpConfigModal } from "@/components/tambo/mcp-config-modal";
 import {
+  getMusicGenesByIds,
+  musicGeneCategories,
+  type MusicGeneWithCategory,
+} from "@/lib/music-genes";
+import {
   Tooltip,
   TooltipProvider,
 } from "@/components/tambo/suggestions-tooltip";
@@ -26,9 +31,12 @@ import {
 import { cva, type VariantProps } from "class-variance-authority";
 import {
   ArrowUp,
+  Check,
+  ChevronDown,
   Image as ImageIcon,
   Paperclip,
   Plus,
+  SlidersHorizontal,
   Square,
   X,
 } from "lucide-react";
@@ -100,6 +108,10 @@ interface MessageInputContextValue {
   setSubmitError: React.Dispatch<React.SetStateAction<string | null>>;
   elicitation: TamboElicitationRequest | null;
   resolveElicitation: ((response: TamboElicitationResponse) => void) | null;
+  selectedMusicGeneIds: string[];
+  selectedMusicGenes: MusicGeneWithCategory[];
+  toggleMusicGene: (id: string) => void;
+  clearMusicGenes: () => void;
 }
 
 /**
@@ -125,6 +137,53 @@ const useMessageInputContext = () => {
   }
   return context;
 };
+
+const MUSIC_GENE_PROMPT_START = "\n\n[Music gene filter]\n";
+const MUSIC_GENE_PROMPT_END = "\n[/Music gene filter]";
+
+function stripMusicGenePrompt(value: string) {
+  const start = value.indexOf(MUSIC_GENE_PROMPT_START);
+  if (start === -1) return value;
+
+  const end = value.indexOf(MUSIC_GENE_PROMPT_END, start);
+  if (end === -1) {
+    return value.slice(0, start).trimEnd();
+  }
+
+  return `${value.slice(0, start)}${value.slice(
+    end + MUSIC_GENE_PROMPT_END.length,
+  )}`.trimEnd();
+}
+
+function formatMusicGenePrompt(genes: MusicGeneWithCategory[]) {
+  if (genes.length === 0) return "";
+
+  const lines = genes.map(
+    (gene) =>
+      `- ${gene.name} (${gene.category}, ${gene.type}): ${gene.promptCue} Definition: ${gene.definition}. Effect: ${gene.effect}.`,
+  );
+
+  return `${MUSIC_GENE_PROMPT_START}Treat the selected items as modular prompt manuals for small-grain music control. Preserve the user's request, then bias the Strudel composition toward these music genes:\n${lines.join(
+    "\n",
+  )}${MUSIC_GENE_PROMPT_END}`;
+}
+
+function composeMessageWithMusicGenes(
+  visibleMessage: string,
+  genes: MusicGeneWithCategory[],
+) {
+  const cleanedMessage = stripMusicGenePrompt(visibleMessage).trimEnd();
+  const genePrompt = formatMusicGenePrompt(genes);
+  if (!genePrompt) return cleanedMessage;
+  return `${cleanedMessage}${genePrompt}`;
+}
+
+function keepWheelInsideScrollablePanel(e: React.WheelEvent<HTMLDivElement>) {
+  const element = e.currentTarget;
+  if (element.scrollHeight <= element.clientHeight) return;
+
+  e.stopPropagation();
+}
 
 /**
  * Props for the MessageInput component.
@@ -194,18 +253,48 @@ const MessageInputInternal = React.forwardRef<
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
+  const [selectedMusicGeneIds, setSelectedMusicGeneIds] = React.useState<
+    string[]
+  >([]);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const dragCounter = React.useRef(0);
 
   // Use elicitation context (optional)
   const { elicitation, resolveElicitation } = useTamboElicitationContext();
+  const selectedMusicGenes = React.useMemo(
+    () => getMusicGenesByIds(selectedMusicGeneIds),
+    [selectedMusicGeneIds],
+  );
 
   React.useEffect(() => {
-    setDisplayValue(value);
-    if (value && textareaRef.current) {
+    const visibleValue = stripMusicGenePrompt(value);
+    setDisplayValue(visibleValue);
+    if (visibleValue && textareaRef.current) {
       textareaRef.current.focus();
     }
   }, [value]);
+
+  React.useEffect(() => {
+    const nextValue = composeMessageWithMusicGenes(
+      displayValue,
+      selectedMusicGenes,
+    );
+    if (nextValue !== value) {
+      setValue(nextValue);
+    }
+  }, [displayValue, selectedMusicGenes, setValue, value]);
+
+  const toggleMusicGene = React.useCallback((id: string) => {
+    setSelectedMusicGeneIds((current) =>
+      current.includes(id)
+        ? current.filter((geneId) => geneId !== id)
+        : [...current, id],
+    );
+  }, []);
+
+  const clearMusicGenes = React.useCallback(() => {
+    setSelectedMusicGeneIds([]);
+  }, []);
 
   const handleSubmit = React.useCallback(
     async (e: React.FormEvent) => {
@@ -224,6 +313,7 @@ const MessageInputInternal = React.forwardRef<
       try {
         await submit();
         setValue("");
+        setSelectedMusicGeneIds([]);
         // Clear context attachments after successful submit
         clearContextAttachments();
         // Images are cleared automatically by the TamboThreadInputProvider
@@ -261,6 +351,7 @@ const MessageInputInternal = React.forwardRef<
       images,
       clearImages,
       clearContextAttachments,
+      setSelectedMusicGeneIds,
     ],
   );
 
@@ -328,7 +419,7 @@ const MessageInputInternal = React.forwardRef<
     () => ({
       value: displayValue,
       setValue: (newValue: string) => {
-        setValue(newValue);
+        setValue(composeMessageWithMusicGenes(newValue, selectedMusicGenes));
         setDisplayValue(newValue);
       },
       submit,
@@ -341,6 +432,10 @@ const MessageInputInternal = React.forwardRef<
       setSubmitError,
       elicitation,
       resolveElicitation,
+      selectedMusicGeneIds,
+      selectedMusicGenes,
+      toggleMusicGene,
+      clearMusicGenes,
     }),
     [
       displayValue,
@@ -356,6 +451,10 @@ const MessageInputInternal = React.forwardRef<
       submitError,
       elicitation,
       resolveElicitation,
+      selectedMusicGeneIds,
+      selectedMusicGenes,
+      toggleMusicGene,
+      clearMusicGenes,
     ],
   );
   return (
@@ -937,6 +1036,225 @@ const MessageInputMcpResourceButton = React.forwardRef<
 });
 MessageInputMcpResourceButton.displayName = "MessageInput.McpResourceButton";
 
+export type MessageInputMusicGeneFilterProps =
+  React.HTMLAttributes<HTMLDivElement>;
+
+const MessageInputMusicGeneFilter = React.forwardRef<
+  HTMLDivElement,
+  MessageInputMusicGeneFilterProps
+>(({ className, ...props }, ref) => {
+  const {
+    selectedMusicGeneIds,
+    selectedMusicGenes,
+    toggleMusicGene,
+    clearMusicGenes,
+  } = useMessageInputContext();
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [activeCategoryId, setActiveCategoryId] =
+    React.useState<(typeof musicGeneCategories)[number]["id"]>("skeleton");
+  const scrollPositionsRef = React.useRef<Record<string, number>>({});
+  const geneListRef = React.useRef<HTMLDivElement>(null);
+
+  const activeCategory =
+    musicGeneCategories.find((category) => category.id === activeCategoryId) ??
+    musicGeneCategories[0];
+
+  const selectedCount = selectedMusicGeneIds.length;
+
+  const handleCategoryChange = React.useCallback(
+    (categoryId: (typeof musicGeneCategories)[number]["id"]) => {
+      const currentCategoryId = activeCategoryId;
+      const currentScrollElement = geneListRef.current;
+
+      if (currentScrollElement) {
+        scrollPositionsRef.current[currentCategoryId] =
+          currentScrollElement.scrollTop;
+      }
+
+      setActiveCategoryId(categoryId);
+    },
+    [activeCategoryId],
+  );
+
+  React.useLayoutEffect(() => {
+    const element = geneListRef.current;
+    if (!element) return;
+
+    element.scrollTop = scrollPositionsRef.current[activeCategoryId] ?? 0;
+  }, [activeCategoryId]);
+
+  return (
+    <div
+      ref={ref}
+      className={cn("border-b border-border pb-2", className)}
+      data-slot="message-input-music-gene-filter"
+      {...props}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => setIsOpen((current) => !current)}
+          className={cn(
+            "inline-flex h-9 min-w-0 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-colors",
+            "border-border bg-background text-foreground hover:bg-muted",
+          )}
+          aria-expanded={isOpen}
+        >
+          <SlidersHorizontal className="h-4 w-4 shrink-0" />
+          <span className="truncate">Music genes</span>
+          {selectedCount > 0 && (
+            <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] leading-none text-stone-900">
+              {selectedCount}
+            </span>
+          )}
+          <ChevronDown
+            className={cn(
+              "h-3.5 w-3.5 shrink-0 transition-transform",
+              isOpen && "rotate-180",
+            )}
+          />
+        </button>
+
+        {selectedCount > 0 && (
+          <button
+            type="button"
+            onClick={clearMusicGenes}
+            className="h-8 shrink-0 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {selectedCount > 0 && (
+        <div className="mt-2 flex max-h-16 flex-wrap gap-1.5 overflow-y-auto pr-1">
+          {selectedMusicGenes.map((gene) => (
+            <button
+              key={gene.id}
+              type="button"
+              onClick={() => toggleMusicGene(gene.id)}
+              className="inline-flex max-w-full items-center gap-1 rounded-full border border-amber-300/70 bg-amber-100/80 px-2 py-1 text-[11px] font-semibold leading-none text-stone-800 transition-colors hover:bg-amber-200"
+              title={`${gene.definition} - ${gene.effect}`}
+            >
+              <span className="truncate">{gene.name}</span>
+              <X className="h-3 w-3 shrink-0" />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {isOpen && (
+        <div className="mt-2 grid h-[min(22rem,45vh)] min-h-0 grid-cols-[112px_minmax(0,1fr)] overflow-hidden rounded-lg border border-border bg-background">
+          <div
+            className="min-h-0 overflow-y-auto overscroll-contain border-r border-border bg-muted/35 p-1"
+            onWheel={keepWheelInsideScrollablePanel}
+          >
+            {musicGeneCategories.map((category) => {
+              const categorySelectedCount = category.genes.filter((gene) =>
+                selectedMusicGeneIds.includes(gene.id),
+              ).length;
+              const isActive = activeCategory.id === category.id;
+
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => handleCategoryChange(category.id)}
+                  className={cn(
+                    "mb-1 flex min-h-11 w-full items-center justify-between gap-1 rounded-md px-2 text-left text-xs transition-colors",
+                    isActive
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-background/70 hover:text-foreground",
+                  )}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-semibold">
+                      {category.label}
+                    </span>
+                    <span className="block truncate text-[10px] opacity-70">
+                      {category.hint}
+                    </span>
+                  </span>
+                  {categorySelectedCount > 0 && (
+                    <span className="shrink-0 rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold leading-none text-stone-900">
+                      {categorySelectedCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div
+            ref={geneListRef}
+            className="min-h-0 overflow-y-auto overscroll-contain p-2"
+            onWheel={keepWheelInsideScrollablePanel}
+          >
+            <div className="sticky top-0 z-10 mb-2 flex items-center justify-between gap-2 bg-background/95 pb-2 backdrop-blur">
+              <div className="min-w-0">
+                <p className="truncate text-xs font-bold text-foreground">
+                  {activeCategory.label}
+                </p>
+                <p className="truncate text-[11px] text-muted-foreground">
+                  {activeCategory.hint}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-1.5">
+              {activeCategory.genes.map((gene) => {
+                const isSelected = selectedMusicGeneIds.includes(gene.id);
+
+                return (
+                  <button
+                    key={gene.id}
+                    type="button"
+                    onClick={() => toggleMusicGene(gene.id)}
+                    className={cn(
+                      "grid min-h-16 grid-cols-[1rem_minmax(0,1fr)] gap-2 rounded-md border px-2.5 py-2 text-left transition-colors",
+                      isSelected
+                        ? "border-amber-300 bg-amber-100/85 text-stone-900"
+                        : "border-border bg-background text-foreground hover:bg-muted",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "mt-0.5 flex h-4 w-4 items-center justify-center rounded border",
+                        isSelected
+                          ? "border-amber-500 bg-amber-400 text-stone-900"
+                          : "border-border bg-background",
+                      )}
+                    >
+                      {isSelected && <Check className="h-3 w-3" />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="truncate text-xs font-bold">
+                          {gene.name}
+                        </span>
+                        <span className="shrink-0 rounded bg-black/5 px-1.5 py-0.5 text-[10px] font-medium opacity-70">
+                          {gene.type}
+                        </span>
+                      </span>
+                      <span className="mt-1 block text-[11px] leading-snug opacity-80">
+                        {gene.definition}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] leading-snug opacity-65">
+                        {gene.effect}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+MessageInputMusicGeneFilter.displayName = "MessageInput.MusicGeneFilter";
+
 /**
  * Props for the ImageContextBadge component.
  */
@@ -1207,6 +1525,7 @@ export {
   MessageInputMcpConfigButton,
   MessageInputMcpPromptButton,
   MessageInputMcpResourceButton,
+  MessageInputMusicGeneFilter,
   MessageInputNewThreadButton,
   MessageInputStagedImages,
   MessageInputSubmitButton,

@@ -450,6 +450,49 @@ Maps Strudel's internal CSS variables to our theme variables
     box-shadow: 0 10px 30px rgba(92, 95, 96, 0.08);
 }
 
+.music-chat-shell [data-slot="message-input-music-gene-filter"] {
+    border-bottom-color: rgba(149, 167, 141, 0.28);
+    color: #4d5148;
+}
+
+.music-chat-shell [data-slot="message-input-music-gene-filter"] > div {
+    background: transparent;
+}
+
+.music-chat-shell [data-slot="message-input-music-gene-filter"] button {
+    border-color: rgba(149, 167, 141, 0.34);
+}
+
+.music-chat-shell [data-slot="message-input-music-gene-filter"] button:hover {
+    border-color: rgba(243, 180, 63, 0.42);
+}
+
+.music-chat-shell [data-slot="message-input-music-gene-filter"] .bg-background {
+    background: rgba(250, 255, 246, 0.98);
+}
+
+.music-chat-shell
+    [data-slot="message-input-music-gene-filter"]
+    .bg-background\/95 {
+    background: rgba(250, 255, 246, 0.95);
+}
+
+.music-chat-shell [data-slot="message-input-music-gene-filter"] .bg-muted\/35 {
+    background: rgba(232, 245, 224, 0.78);
+}
+
+.music-chat-shell
+    [data-slot="message-input-music-gene-filter"]
+    .text-foreground {
+    color: #4d5148;
+}
+
+.music-chat-shell
+    [data-slot="message-input-music-gene-filter"]
+    .text-muted-foreground {
+    color: rgba(92, 95, 96, 0.72);
+}
+
 .music-chat-shell [data-slot="message-input-textarea"] {
     background: transparent;
     color: #4d5148;
