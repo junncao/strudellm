@@ -35,7 +35,7 @@ export function TagGameShell() {
     shouldShowGlobalLoader,
     pendingSummary,
     statusStepLabel,
-    setContextFile,
+    setContextSource,
   } = useTagGameController();
   const customInputRef = React.useRef<HTMLTextAreaElement | null>(null);
 
@@ -75,7 +75,7 @@ export function TagGameShell() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto lg:justify-end">
-            <TagGameDebugContextButton onContextFileChange={setContextFile} />
+            <TagGameDebugContextButton onContextSourceChange={setContextSource} />
             <div className="flex items-center gap-2 rounded-full border border-white/55 bg-white/72 px-2 py-2 shadow-sm">
               <button
                 type="button"

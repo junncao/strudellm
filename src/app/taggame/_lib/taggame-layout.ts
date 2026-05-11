@@ -11,6 +11,16 @@ export type TagGameBubbleLayout = {
   scale: number;
 };
 
+export type TagGameBubbleDimensions = {
+  widthPx: number;
+  heightPx: number;
+};
+
+export type TagGameBubbleFootprint = {
+  halfWidth: number;
+  halfHeight: number;
+};
+
 type LayoutGroupId =
   | "style"
   | "custom"
@@ -23,28 +33,35 @@ type LayoutGroupId =
   | "behavior"
   | "arrangement";
 
-type GroupAnchor = {
+type PlacementMode = "field" | "selected";
+
+type Slot = {
   x: number;
   y: number;
-  spreadX: number;
-  spreadY: number;
-  avoidCenter?: boolean;
 };
 
-const groupAnchors: Record<LayoutGroupId, GroupAnchor> = {
-  style: { x: 18, y: 16, spreadX: 11, spreadY: 8, avoidCenter: true },
-  custom: { x: 88, y: 12, spreadX: 6, spreadY: 5, avoidCenter: true },
-  skeleton: { x: 12, y: 42, spreadX: 10, spreadY: 9, avoidCenter: true },
-  groove: { x: 34, y: 22, spreadX: 9, spreadY: 8, avoidCenter: true },
-  bass: { x: 16, y: 78, spreadX: 9, spreadY: 8, avoidCenter: true },
-  harmony: { x: 86, y: 42, spreadX: 10, spreadY: 9, avoidCenter: true },
-  texture: { x: 86, y: 78, spreadX: 9, spreadY: 8, avoidCenter: true },
-  timbre: { x: 50, y: 88, spreadX: 9, spreadY: 6, avoidCenter: true },
-  behavior: { x: 66, y: 22, spreadX: 9, spreadY: 8, avoidCenter: true },
-  arrangement: { x: 50, y: 11, spreadX: 9, spreadY: 5, avoidCenter: true },
+type PlacedBubble = {
+  x: number;
+  y: number;
+  footprint: TagGameBubbleFootprint;
 };
 
-const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+const LAYOUT_CANVAS_WIDTH = 1220;
+const LAYOUT_CANVAS_HEIGHT = 768;
+const SLOT_XS = [8, 17, 26, 35, 44, 53, 62, 71, 80, 89];
+const SLOT_YS = [9, 15, 21, 27, 33, 39, 45, 51, 57, 63, 69, 75, 81, 87];
+const groupAnchors: Record<LayoutGroupId, Slot> = {
+  style: { x: 15, y: 16 },
+  custom: { x: 89, y: 9 },
+  groove: { x: 35, y: 18 },
+  skeleton: { x: 12, y: 47 },
+  bass: { x: 16, y: 77 },
+  harmony: { x: 71, y: 77 },
+  texture: { x: 53, y: 77 },
+  timbre: { x: 35, y: 77 },
+  behavior: { x: 62, y: 15 },
+  arrangement: { x: 80, y: 15 },
+};
 
 function hashString(input: string) {
   let hash = 0;
@@ -60,119 +77,149 @@ function pickRange(seed: number, min: number, max: number) {
   return min + (max - min) * normalized;
 }
 
+function pickSignedRange(seed: number, minAbs: number, maxAbs: number) {
+  const magnitude = pickRange(seed, minAbs, maxAbs);
+  const sign = seed % 2 === 0 ? 1 : -1;
+  return magnitude * sign;
+}
+
+function toPercentX(px: number) {
+  return (px / LAYOUT_CANVAS_WIDTH) * 100;
+}
+
+function toPercentY(px: number) {
+  return (px / LAYOUT_CANVAS_HEIGHT) * 100;
+}
+
+export function getTagGameBubbleDimensions(tag: TagGameTag): TagGameBubbleDimensions {
+  const labelLength = tag.label.trim().length;
+
+  if (tag.kind === "style") {
+    return {
+      widthPx: Math.max(96, Math.min(112, 96 + Math.max(0, labelLength - 8) * 2)),
+      heightPx: labelLength > 11 ? 42 : 38,
+    };
+  }
+
+  if (tag.kind === "custom") {
+    return {
+      widthPx: Math.max(112, Math.min(140, 112 + Math.max(0, labelLength - 12) * 2.2)),
+      heightPx: labelLength > 20 ? 46 : 40,
+    };
+  }
+
+  return {
+    widthPx: Math.max(
+      82,
+      Math.min(
+        108,
+        Math.max(
+          82 + Math.max(0, labelLength - 10) * 2.5,
+          84 + Math.max(0, tag.category.length - 7) * 4,
+        ),
+      ),
+    ),
+    heightPx: labelLength > 14 ? 40 : 34,
+  };
+}
+
+export function getTagGameBubbleFootprint(
+  tag: TagGameTag,
+  mode: PlacementMode = "field",
+): TagGameBubbleFootprint {
+  const { widthPx, heightPx } = getTagGameBubbleDimensions(tag);
+  const paddingX = mode === "field" ? 3 : 8;
+  const paddingY = mode === "field" ? 3 : 8;
+  const floatX = mode === "field" ? 2.5 : 3;
+  const floatY = mode === "field" ? 2 : 3;
+
+  return {
+    halfWidth: toPercentX(widthPx / 2 + paddingX + floatX),
+    halfHeight: toPercentY(heightPx / 2 + paddingY + floatY),
+  };
+}
+
 function getGroupId(tag: TagGameTag): LayoutGroupId {
   if (tag.kind === "style") return "style";
   if (tag.kind === "custom") return "custom";
   return tag.category;
 }
 
-function isInsideCenterExclusionZone(x: number, y: number) {
-  const centerX = 50;
-  const centerY = 50;
-  const dx = x - centerX;
-  const dy = y - centerY;
-  return Math.hypot(dx / 28, dy / 24.5) < 1;
+function isUsableFieldSlot(slot: Slot) {
+  const dx = slot.x - 50;
+  const dy = slot.y - 50;
+  if (Math.hypot(dx / 30, dy / 26.5) < 1) {
+    return false;
+  }
+
+  if (slot.x > 75 && slot.y > 28 && slot.y < 74) {
+    return false;
+  }
+
+  return true;
 }
 
-function buildCandidatePosition({
-  anchor,
-  localIndex,
-  totalInGroup,
-  seed,
-  attempt,
-}: {
-  anchor: GroupAnchor;
-  localIndex: number;
-  totalInGroup: number;
-  seed: number;
-  attempt: number;
-}) {
-  const ringIndex = localIndex + attempt * Math.max(totalInGroup, 1);
-  const radiusFactor = 0.22 + Math.sqrt(ringIndex + 1) * 0.24;
-  const angle = (seed % 360) * (Math.PI / 180) + ringIndex * GOLDEN_ANGLE;
+const fieldSlots: Slot[] = SLOT_YS.flatMap((y) => SLOT_XS.map((x) => ({ x, y }))).filter(isUsableFieldSlot);
 
-  return {
-    x: Math.max(7, Math.min(93, anchor.x + Math.cos(angle) * anchor.spreadX * radiusFactor)),
-    y: Math.max(9, Math.min(91, anchor.y + Math.sin(angle) * anchor.spreadY * radiusFactor)),
-  };
+function overlapsPlacedBubble(slot: Slot, footprint: TagGameBubbleFootprint, placed: PlacedBubble) {
+  return Math.abs(slot.x - placed.x) < footprint.halfWidth + placed.footprint.halfWidth
+    && Math.abs(slot.y - placed.y) < footprint.halfHeight + placed.footprint.halfHeight;
+}
+
+function scoreSlot(slot: Slot, anchor: Slot, seed: number) {
+  const distance = Math.hypot(slot.x - anchor.x, slot.y - anchor.y);
+  const jitter = pickRange(seed + slot.x * 10 + slot.y * 10, 0, 0.12);
+  return distance + jitter;
 }
 
 export function createTagGameLayout(tags: TagGameTag[]): Record<string, TagGameBubbleLayout> {
-  const placed: Array<{ x: number; y: number; minDistance: number }> = [];
-  const groupCounts = tags.reduce<Record<LayoutGroupId, number>>((counts, tag) => {
+  const placementOrder = tags
+    .map((tag, index) => ({
+      tag,
+      index,
+      dimensions: getTagGameBubbleDimensions(tag),
+      footprint: getTagGameBubbleFootprint(tag, "field"),
+    }))
+    .sort((left, right) => right.dimensions.widthPx * right.dimensions.heightPx - left.dimensions.widthPx * left.dimensions.heightPx || left.index - right.index);
+
+  const placed: PlacedBubble[] = [];
+  const layouts = new Map<string, TagGameBubbleLayout>();
+
+  for (const { tag, index, footprint } of placementOrder) {
     const groupId = getGroupId(tag);
-    counts[groupId] = (counts[groupId] ?? 0) + 1;
-    return counts;
-  }, {} as Record<LayoutGroupId, number>);
-  const groupIndices = new Map<LayoutGroupId, number>();
+    const anchor = groupAnchors[groupId];
+    const seed = hashString(`${tag.id}-${index}`);
+    const slot = fieldSlots
+      .filter((candidate) => !placed.some((item) => overlapsPlacedBubble(candidate, footprint, item)))
+      .sort((left, right) => scoreSlot(left, anchor, seed) - scoreSlot(right, anchor, seed))[0]
+      ?? anchor;
+
+    placed.push({ x: slot.x, y: slot.y, footprint });
+    layouts.set(tag.id, {
+      id: tag.id,
+      x: slot.x + pickRange(seed * 3, -0.18, 0.18),
+      y: slot.y + pickRange(seed * 5, -0.14, 0.14),
+      floatX: pickSignedRange(seed * 7, 1.4, 2.8),
+      floatY: pickSignedRange(seed * 11, 0.9, 1.9),
+      duration: pickRange(seed * 13, 7.2, 9.4),
+      delay: pickRange(seed * 17, 0, 1.6),
+      scale: pickRange(seed * 19, 0.994, 1.012),
+    });
+  }
 
   return Object.fromEntries(
-    tags.map((tag, index) => {
-      const seed = hashString(`${tag.id}-${index}`);
-      const groupId = getGroupId(tag);
-      const anchor = groupAnchors[groupId];
-      const totalInGroup = groupCounts[groupId] ?? 1;
-      const localIndex = groupIndices.get(groupId) ?? 0;
-      groupIndices.set(groupId, localIndex + 1);
-
-      const minDistance =
-        tag.kind === "style" ? 16.5 : tag.kind === "custom" ? 20 : 13.5;
-
-      let x = anchor.x;
-      let y = anchor.y;
-
-      for (let attempt = 0; attempt < 36; attempt += 1) {
-        const candidate = buildCandidatePosition({
-          anchor,
-          localIndex,
-          totalInGroup,
-          seed,
-          attempt,
-        });
-        const hasCollision = placed.some((item) => {
-          const dx = candidate.x - item.x;
-          const dy = candidate.y - item.y;
-          return Math.hypot(dx, dy) < Math.max(minDistance, item.minDistance);
-        });
-        const entersCenter = anchor.avoidCenter && isInsideCenterExclusionZone(candidate.x, candidate.y);
-
-        if (!hasCollision && !entersCenter) {
-          x = candidate.x;
-          y = candidate.y;
-          break;
-        }
-
-        if (attempt === 35) {
-          const fallbackRadiusX = Math.max(anchor.spreadX * 1.6, 14);
-          const fallbackRadiusY = Math.max(anchor.spreadY * 1.6, 12);
-          const fallbackAngle = (seed % 360) * (Math.PI / 180) + localIndex * GOLDEN_ANGLE;
-          x = Math.max(6, Math.min(94, anchor.x + Math.cos(fallbackAngle) * fallbackRadiusX));
-          y = Math.max(8, Math.min(92, anchor.y + Math.sin(fallbackAngle) * fallbackRadiusY));
-
-          if (anchor.avoidCenter && isInsideCenterExclusionZone(x, y)) {
-            const pushAngle = Math.atan2(y - 50, x - 50) || fallbackAngle;
-            x = 50 + Math.cos(pushAngle) * 29;
-            y = 50 + Math.sin(pushAngle) * 25.5;
-          }
-          break;
-        }
-      }
-
-      placed.push({ x, y, minDistance });
-
-      return [
-        tag.id,
-        {
-          id: tag.id,
-          x,
-          y,
-          floatX: pickRange(seed * 3, -6.5, 6.5),
-          floatY: pickRange(seed * 7, -5.2, 5.2),
-          duration: pickRange(seed * 11, 10, 16),
-          delay: pickRange(seed * 13, 0, 2.8),
-          scale: pickRange(seed * 17, 0.95, 1.04),
-        } satisfies TagGameBubbleLayout,
-      ];
-    }),
+    tags.map((tag) => [
+      tag.id,
+      layouts.get(tag.id) ?? {
+        id: tag.id,
+        x: 50,
+        y: 50,
+        floatX: 0,
+        floatY: 0,
+        duration: 12,
+        delay: 0,
+        scale: 1,
+      },
+    ]),
   );
 }

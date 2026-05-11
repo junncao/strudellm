@@ -5,8 +5,8 @@ import { useTambo, useTamboThreadInput } from "@tambo-ai/react";
 import * as React from "react";
 import { buildTagGamePrompt } from "./build-taggame-prompt";
 import {
-  clearStoredTagGameContextFile,
   type TagGameContextFile,
+  type TagGameContextSource,
 } from "./taggame-context-file";
 import {
   addTagGameDebugLog,
@@ -71,6 +71,32 @@ function serializeDetail(detail: unknown) {
   }
 }
 
+async function resolveTagGameContextSource(contextSource: TagGameContextSource | null): Promise<TagGameContextFile | null> {
+  if (!contextSource) {
+    return null;
+  }
+
+  if (contextSource.kind === "upload") {
+    return contextSource.file;
+  }
+
+  const response = await fetch("/api/taggame/debug-context", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path: contextSource.path }),
+  });
+
+  const payload = await response.json().catch(() => null) as
+    | { error?: string; contextFile?: TagGameContextFile }
+    | null;
+
+  if (!response.ok || !payload?.contextFile) {
+    throw new Error(payload?.error || "Failed to read local debug context file.");
+  }
+
+  return payload.contextFile;
+}
+
 export function useTagGameController() {
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
   const [customTags, setCustomTags] = React.useState<TagGameCustomTag[]>([]);
@@ -80,7 +106,7 @@ export function useTagGameController() {
   const [pendingSubmission, setPendingSubmission] = React.useState<PendingSubmission | null>(null);
   const [statusStepLabel, setStatusStepLabel] = React.useState("Step 1/4 Pick bubbles");
   const [activeCookRequestId, setActiveCookRequestIdState] = React.useState<string | null>(null);
-  const [contextFile, setContextFile] = React.useState<TagGameContextFile | null>(null);
+  const [contextSource, setContextSource] = React.useState<TagGameContextSource | null>(null);
   const [isHydrated, setIsHydrated] = React.useState(false);
 
   const { setValue, submit, isDisabled, isPending } = useTamboThreadInput();
@@ -142,7 +168,6 @@ export function useTagGameController() {
   const previousThreadIdRef = React.useRef<string | null>(null);
 
   React.useLayoutEffect(() => {
-    clearStoredTagGameContextFile();
     clearTagGameDebugLogs();
     latestRequestIdRef.current = null;
     generationSequenceRef.current = 0;
@@ -154,7 +179,6 @@ export function useTagGameController() {
     previousStreamingStatusRef.current = null;
     previousThreadIdRef.current = null;
     setActiveTagGameRequestId(null);
-    setContextFile(null);
     setSelectedIds([]);
     setCustomTags([]);
     setCustomInput("");
@@ -362,14 +386,6 @@ export function useTagGameController() {
     generationSequenceRef.current += 1;
     const sequence = generationSequenceRef.current;
     const requestId = makeRequestId();
-    const prompt = buildTagGamePrompt({
-      requestId,
-      styles: selectedStyles,
-      genes: selectedGenes,
-      customTags: selectedCustomTags,
-      contextFile,
-    });
-    const expectedThreadId = startNewThread();
     const resetVersion = resetVersionRef.current;
 
     latestRequestIdRef.current = requestId;
@@ -377,35 +393,84 @@ export function useTagGameController() {
     setActiveCookRequestId(requestId);
     setPendingSummary(summary);
     setSubmitError(null);
-    setStatusStepLabel("Step 2/4 Opening a fresh cooking thread");
+    setStatusStepLabel(contextSource?.kind === "path" ? "Step 2/4 Opening local debug file" : "Step 2/4 Opening a fresh cooking thread");
 
-    debug({
-      step: "cook",
-      level: "info",
-      message: "Cook button pressed, preparing a fresh fusion run.",
-      detail: {
-        expectedThreadId,
-        requestId,
-        selectionCount: selectedIds.length,
-        styles: selectedStyles.map((item) => item.id),
-        genes: selectedGenes.map((item) => item.id),
-        custom: selectedCustomTags.map((item) => item.label),
-        contextFile: contextFile ? {
-          fileName: contextFile.fileName,
-          chars: contextFile.content.length,
-          truncated: contextFile.truncated,
-        } : null,
-      },
-    });
+    void (async () => {
+      try {
+        const resolvedContextFile = await resolveTagGameContextSource(contextSource);
 
-    setPendingSubmission({
-      expectedThreadId,
-      prompt,
-      requestId,
-      resetVersion,
-      sequence,
-    });
+        if (
+          latestRequestIdRef.current !== requestId
+          || generationSequenceRef.current !== sequence
+          || resetVersionRef.current !== resetVersion
+        ) {
+          return;
+        }
+
+        const prompt = buildTagGamePrompt({
+          requestId,
+          styles: selectedStyles,
+          genes: selectedGenes,
+          customTags: selectedCustomTags,
+          contextFile: resolvedContextFile,
+        });
+        const expectedThreadId = startNewThread();
+
+        debug({
+          step: "cook",
+          level: "info",
+          message: "Cook button pressed, preparing a fresh fusion run.",
+          detail: {
+            expectedThreadId,
+            requestId,
+            selectionCount: selectedIds.length,
+            styles: selectedStyles.map((item) => item.id),
+            genes: selectedGenes.map((item) => item.id),
+            custom: selectedCustomTags.map((item) => item.label),
+            contextSource: contextSource?.kind === "path"
+              ? { kind: "path", path: contextSource.path }
+              : resolvedContextFile
+                ? {
+                    kind: "upload",
+                    fileName: resolvedContextFile.fileName,
+                    chars: resolvedContextFile.content.length,
+                    truncated: resolvedContextFile.truncated,
+                  }
+                : null,
+          },
+        });
+
+        setStatusStepLabel("Step 2/4 Opening a fresh cooking thread");
+        setPendingSubmission({
+          expectedThreadId,
+          prompt,
+          requestId,
+          resetVersion,
+          sequence,
+        });
+      } catch (nextError) {
+        const message = formatError(nextError);
+        if (
+          latestRequestIdRef.current === requestId
+          && generationSequenceRef.current === sequence
+          && resetVersionRef.current === resetVersion
+        ) {
+          setSubmitError(message);
+          setStatusStepLabel("Cook failed, see the error details");
+        }
+        debug({
+          step: "context",
+          level: "error",
+          message: "Failed to resolve debug context before cooking.",
+          detail: nextError,
+        });
+        if (activeCookRequestIdRef.current === requestId) {
+          setActiveCookRequestId(null);
+        }
+      }
+    })();
   }, [
+    contextSource,
     debug,
     invalidateCurrentCook,
     isDisabled,
@@ -414,7 +479,6 @@ export function useTagGameController() {
     selectedGenes,
     selectedIds.length,
     selectedStyles,
-    contextFile,
     selectionSignature,
     setActiveCookRequestId,
     startNewThread,
@@ -595,7 +659,7 @@ export function useTagGameController() {
     pendingSummary,
     shouldShowGlobalLoader: !isReady,
     statusStepLabel,
-    contextFile,
-    setContextFile,
+    contextSource,
+    setContextSource,
   };
 }
