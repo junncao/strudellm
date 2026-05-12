@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 };
 
 export default function LandingPage() {
-  redirect("/chat");
+  redirect("/taggame");
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Hero Section */}
