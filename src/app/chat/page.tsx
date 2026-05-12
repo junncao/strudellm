@@ -54,6 +54,7 @@ import {
 import { StrudelStatusBar } from "@/strudel/components/strudel-status-bar";
 import { StrudelService } from "@/strudel/lib/service";
 import { BetaModal } from "@/components/beta-modal";
+import { PasswordGate } from "@/components/password-gate";
 import { useSession } from "@/lib/auth-client";
 import { AudioWaveform } from "lucide-react";
 
@@ -466,16 +467,18 @@ export default function ChatPage() {
   }
 
   return (
-    <LoadingContextProvider>
-      <StrudelProvider>
-        <StrudelStorageSync />
-        <TrackProvider>
-          <TamboAuthedProvider apiKey={apiKey}>
-            <AppContent />
-          </TamboAuthedProvider>
-        </TrackProvider>
-      </StrudelProvider>
-    </LoadingContextProvider>
+    <PasswordGate>
+      <LoadingContextProvider>
+        <StrudelProvider>
+          <StrudelStorageSync />
+          <TrackProvider>
+            <TamboAuthedProvider apiKey={apiKey}>
+              <AppContent />
+            </TamboAuthedProvider>
+          </TrackProvider>
+        </StrudelProvider>
+      </LoadingContextProvider>
+    </PasswordGate>
   );
 }
 

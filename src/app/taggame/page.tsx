@@ -3,6 +3,7 @@
 import { ApiKeyMissing } from "@/components/api-key-missing";
 import { LoadingContextProvider } from "@/components/loading/context";
 import { FloatingLoader } from "@/components/loading/floating-loader";
+import { PasswordGate } from "@/components/password-gate";
 import { components } from "@/lib/tambo";
 import { tagGameTools } from "./_lib/taggame-tools";
 import { useSession } from "@/lib/auth-client";
@@ -157,14 +158,16 @@ export default function TagGamePage() {
   }
 
   return (
-    <LoadingContextProvider>
-      <StrudelProvider>
-        <TrackProvider>
-          <TagGameTamboProvider apiKey={apiKey}>
-            <TagGameShell />
-          </TagGameTamboProvider>
-        </TrackProvider>
-      </StrudelProvider>
-    </LoadingContextProvider>
+    <PasswordGate>
+      <LoadingContextProvider>
+        <StrudelProvider>
+          <TrackProvider>
+            <TagGameTamboProvider apiKey={apiKey}>
+              <TagGameShell />
+            </TagGameTamboProvider>
+          </TrackProvider>
+        </StrudelProvider>
+      </LoadingContextProvider>
+    </PasswordGate>
   );
 }
