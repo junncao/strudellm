@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     description:
       "Create music with AI assistance with live coding, the live coding environment.",
     type: "website",
-    url: "https://strudel.tambo.co",
+    url: "https://morningdrift.vercel.app",
     siteName: "MorningDrift",
   },
   twitter: {
