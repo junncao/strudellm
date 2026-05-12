@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mixtape Rhythm Dodge</title>
+    <link rel="stylesheet" href="rhythm.css?v=6" />
+  </head>
+  <body>
+    <main class="console" aria-label="Mixtape Rhythm Dodge">
+      <section class="screen">
+        <div class="hud">
+          <span>MIXTAPE RHYTHM DODGE</span>
+          <span id="status">BEAT 01</span>
+        </div>
+        <canvas id="game" width="900" height="520"></canvas>
+        <button id="restart" type="button" aria-label="Restart">RESET</button>
+      </section>
+      <section class="samples" aria-label="Acquired styles">
+        <div class="samples-title">ACQUIRED STYLES</div>
+        <ol id="sample-list" class="sample-list"></ol>
+      </section>
+    </main>
+    <script src="rhythm.js?v=6"></script>
+  </body>
+</html>

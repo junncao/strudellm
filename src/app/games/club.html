@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Club Tag Brawl</title>
+    <link rel="stylesheet" href="club.css?v=2" />
+  </head>
+  <body>
+    <main class="console" aria-label="Club Tag Brawl">
+      <section class="screen">
+        <div class="hud">
+          <span>CLUB TAG BRAWL</span>
+          <span id="status">ACQUIRED 00</span>
+        </div>
+        <canvas id="game" width="960" height="640"></canvas>
+        <button id="restart" type="button" aria-label="Reset">RESET</button>
+      </section>
+      <section class="samples" aria-label="Acquired tags">
+        <div class="samples-title">ACQUIRED STYLES</div>
+        <ol id="sample-list" class="sample-list"></ol>
+      </section>
+    </main>
+    <script src="club.js?v=2"></script>
+  </body>
+</html>
