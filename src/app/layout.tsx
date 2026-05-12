@@ -4,7 +4,7 @@ import "./globals.css";
 import { STORED_THEME_IDS, THEME_STORAGE_KEY } from "@/lib/editor-theme";
 
 export const metadata: Metadata = {
-  title: "MorningDrift - Live Coding Music",
+  title: "LMDJ - Live Coding Music",
   description: "Live coding music editor with AI assistance",
   icons: {
     icon: "/favicon.svg",

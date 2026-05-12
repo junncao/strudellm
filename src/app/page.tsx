@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "MorningDrift - Live Coding Music",
+  title: "LMDJ - Live Coding Music",
   description:
     "Create music with AI assistance with live coding, the live coding environment. Generate beats, melodies, and soundscapes through natural language.",
   keywords: [
@@ -16,16 +16,16 @@ export const metadata: Metadata = {
     "tidal cycles",
   ],
   openGraph: {
-    title: "MorningDrift - Live Coding Music",
+    title: "LMDJ - Live Coding Music",
     description:
       "Create music with AI assistance with live coding, the live coding environment.",
     type: "website",
     url: "https://morningdrift.vercel.app",
-    siteName: "MorningDrift",
+    siteName: "LMDJ",
   },
   twitter: {
     card: "summary_large_image",
-    title: "MorningDrift - Live Coding Music",
+    title: "LMDJ - Live Coding Music",
     description:
       "Create music with AI assistance with live coding, the live coding environment.",
   },

@@ -59,7 +59,7 @@ import { AudioWaveform } from "lucide-react";
 
 const BETA_MODAL_SHOWN_KEY = "strudel-beta-modal-shown-v1";
 
-// Tambo context helpers docs: https://docs.tambo.co/concepts/additional-context/configuration
+// Context helper notes live alongside this implementation.
 // Exposes current Strudel REPL code + error state to the AI.
 // This lets the model respond based on the live editor state (e.g., surfacing errors and suggesting fixes).
 // The returned object should stay small, JSON-serializable, and must not include secrets or sensitive

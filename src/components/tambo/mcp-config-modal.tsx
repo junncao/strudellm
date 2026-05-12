@@ -395,46 +395,12 @@ function MyApp() {
             </div>
           )}
 
-          {/* Info Section */}
           <div className="mt-8 bg-container border border-muted p-4 rounded-lg">
             <h4 className="font-medium mb-2 text-foreground">What is MCP?</h4>
             <p className="text-foreground text-sm leading-relaxed">
-              The{" "}
-              <a
-                href="https://docs.tambo.co/concepts/model-context-protocol"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium underline underline-offset-2 hover:text-foreground"
-              >
-                Model Context Protocol (MCP)
-              </a>{" "}
-              is a standard that allows applications to communicate with
-              external tools and services. By configuring MCP servers, your
-              tambo application will be able to make calls to these tools.
-            </p>
-          </div>
-
-          <div className="mt-4">
-            <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Learn more:</span>{" "}
-              <a
-                href="https://docs.tambo.co/concepts/model-context-protocol/clientside-mcp-connection"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-foreground underline underline-offset-2"
-              >
-                client-side
-              </a>{" "}
-              |{" "}
-              <a
-                href="https://docs.tambo.co/concepts/model-context-protocol/serverside-mcp-connection"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-foreground underline underline-offset-2"
-              >
-                server-side
-              </a>{" "}
-              MCP configuration.
+              Model Context Protocol (MCP) lets the app connect to external
+              tools and services. Add servers here to make those tools available
+              during generation.
             </p>
           </div>
         </div>

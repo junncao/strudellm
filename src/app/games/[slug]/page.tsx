@@ -16,7 +16,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: GamePageProps): Promise<Metadata> {
   const { slug } = await params;
   return {
-    title: `${slug} - MorningDrift`,
+    title: `${slug} - LMDJ`,
   };
 }
 

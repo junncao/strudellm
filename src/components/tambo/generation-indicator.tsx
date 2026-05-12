@@ -1,7 +1,6 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { ExternalLink } from "lucide-react";
 import * as React from "react";
 
 export interface GenerationIndicatorProps
@@ -9,67 +8,12 @@ export interface GenerationIndicatorProps
   isGenerating: boolean;
 }
 
-type Hint = {
-  message: string;
-  href: string;
-};
-
-// Static list; not expected to change at runtime.
-const HINTS: Hint[] = [
-  {
-    message: "Like MorningDrift? Give us a star",
-    href: "https://github.com/tambo-ai/strudellm",
-  },
-  {
-    message: "Add the Tambo agent to your app",
-    href: "https://github.com/tambo-ai/tambo",
-  },
-  {
-    message: "Find a bug? Open a GitHub issue",
-    href: "https://github.com/tambo-ai/strudellm/issues",
-  },
-];
-
-const INITIAL_HINT_DELAY_MS = 3000;
-
-// Pick a random hint index once per module load
-const getRandomHintIndex = () => Math.floor(Math.random() * HINTS.length);
-
 export function GenerationIndicator({
   isGenerating,
   className,
   ...props
 }: GenerationIndicatorProps) {
-  const [showHint, setShowHint] = React.useState(false);
-  const [hintIndex, setHintIndex] = React.useState(() => getRandomHintIndex());
-  const prevIsGenerating = React.useRef(isGenerating);
-
-  React.useEffect(() => {
-    // When generation starts (transition from false to true)
-    if (isGenerating && !prevIsGenerating.current) {
-      setShowHint(false);
-      // Pick a new random hint for each generation
-      setHintIndex(getRandomHintIndex());
-
-      if (HINTS.length === 0) return;
-
-      const timeout = window.setTimeout(() => {
-        setShowHint(true);
-      }, INITIAL_HINT_DELAY_MS);
-
-      prevIsGenerating.current = isGenerating;
-      return () => {
-        window.clearTimeout(timeout);
-      };
-    }
-
-    prevIsGenerating.current = isGenerating;
-  }, [isGenerating]);
-
-  const hint = HINTS.length > 0 ? HINTS[hintIndex] : null;
-
-  // Show nothing if not generating and hint hasn't been shown yet
-  if (!isGenerating && !showHint) {
+  if (!isGenerating) {
     return (
       <div
         className={cn(
@@ -91,29 +35,9 @@ export function GenerationIndicator({
       aria-live="polite"
       {...props}
     >
-      <span className="flex items-center gap-2 truncate">
-        {isGenerating && (
-          <span className="generation-indicator__active shrink-0 inline-flex items-center gap-1.5 font-bold">
-            <span className="generation-indicator__dot" aria-hidden />
-            <span className="animate-pulse">Generating...</span>
-          </span>
-        )}
-        {showHint && hint && (
-          <>
-            {isGenerating && (
-              <span className="generation-indicator__sep shrink-0">—</span>
-            )}
-            <a
-              className="generation-indicator__hint inline-flex items-center gap-1 truncate"
-              href={hint.href}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <span className="truncate">{hint.message}</span>
-              <ExternalLink className="w-3 h-3 shrink-0" />
-            </a>
-          </>
-        )}
+      <span className="generation-indicator__active shrink-0 inline-flex items-center gap-1.5 font-bold">
+        <span className="generation-indicator__dot" aria-hidden />
+        <span className="animate-pulse">Generating...</span>
       </span>
     </div>
   );

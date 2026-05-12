@@ -27,15 +27,8 @@ export function ApiKeyMissing() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Get your free API key at{" "}
-          <a
-            href="https://tambo.co/dashboard"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline"
-          >
-            tambo.co/dashboard
-          </a>
+          If the app is missing an API key, add the required environment
+          variables locally and refresh the page.
         </p>
       </div>
     </div>
