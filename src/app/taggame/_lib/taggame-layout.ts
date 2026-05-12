@@ -33,7 +33,9 @@ type LayoutGroupId =
   | "behavior"
   | "arrangement";
 
-type PlacementMode = "field" | "selected";
+export type PlacementMode = "field" | "selected";
+
+export const TAGGAME_SELECTED_BUBBLE_SCALE = 0.84;
 
 type Slot = {
   x: number;
@@ -91,35 +93,47 @@ function toPercentY(px: number) {
   return (px / LAYOUT_CANVAS_HEIGHT) * 100;
 }
 
-export function getTagGameBubbleDimensions(tag: TagGameTag): TagGameBubbleDimensions {
+export function getTagGameBubbleDimensions(
+  tag: TagGameTag,
+  mode: PlacementMode = "field",
+): TagGameBubbleDimensions {
   const labelLength = tag.label.trim().length;
 
+  let dimensions: TagGameBubbleDimensions;
+
   if (tag.kind === "style") {
-    return {
+    dimensions = {
       widthPx: Math.max(96, Math.min(112, 96 + Math.max(0, labelLength - 8) * 2)),
       heightPx: labelLength > 11 ? 42 : 38,
     };
-  }
-
-  if (tag.kind === "custom") {
-    return {
+  } else if (tag.kind === "custom") {
+    dimensions = {
       widthPx: Math.max(112, Math.min(140, 112 + Math.max(0, labelLength - 12) * 2.2)),
       heightPx: labelLength > 20 ? 46 : 40,
     };
+  } else {
+    dimensions = {
+      widthPx: Math.max(
+        82,
+        Math.min(
+          108,
+          Math.max(
+            82 + Math.max(0, labelLength - 10) * 2.5,
+            84 + Math.max(0, tag.category.length - 7) * 4,
+          ),
+        ),
+      ),
+      heightPx: labelLength > 14 ? 40 : 34,
+    };
+  }
+
+  if (mode === "field") {
+    return dimensions;
   }
 
   return {
-    widthPx: Math.max(
-      82,
-      Math.min(
-        108,
-        Math.max(
-          82 + Math.max(0, labelLength - 10) * 2.5,
-          84 + Math.max(0, tag.category.length - 7) * 4,
-        ),
-      ),
-    ),
-    heightPx: labelLength > 14 ? 40 : 34,
+    widthPx: Math.max(74, Math.round(dimensions.widthPx * TAGGAME_SELECTED_BUBBLE_SCALE)),
+    heightPx: Math.max(30, Math.round(dimensions.heightPx * TAGGAME_SELECTED_BUBBLE_SCALE)),
   };
 }
 
@@ -127,11 +141,11 @@ export function getTagGameBubbleFootprint(
   tag: TagGameTag,
   mode: PlacementMode = "field",
 ): TagGameBubbleFootprint {
-  const { widthPx, heightPx } = getTagGameBubbleDimensions(tag);
-  const paddingX = mode === "field" ? 3 : 8;
-  const paddingY = mode === "field" ? 3 : 8;
-  const floatX = mode === "field" ? 2.5 : 3;
-  const floatY = mode === "field" ? 2 : 3;
+  const { widthPx, heightPx } = getTagGameBubbleDimensions(tag, mode);
+  const paddingX = mode === "field" ? 3 : 3;
+  const paddingY = mode === "field" ? 3 : 2;
+  const floatX = mode === "field" ? 2.5 : 1.2;
+  const floatY = mode === "field" ? 2 : 1;
 
   return {
     halfWidth: toPercentX(widthPx / 2 + paddingX + floatX),

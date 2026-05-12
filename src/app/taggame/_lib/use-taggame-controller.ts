@@ -1,6 +1,7 @@
 "use client";
 
 import { useStrudel } from "@/strudel/context/strudel-provider";
+import { DEFAULT_CODE } from "@/strudel/lib/service";
 import { useTambo, useTamboThreadInput } from "@tambo-ai/react";
 import * as React from "react";
 import { buildTagGamePrompt } from "./build-taggame-prompt";
@@ -23,7 +24,6 @@ import {
 import { setActiveTagGameRequestId } from "./taggame-generation-guard";
 
 type PendingSubmission = {
-  expectedThreadId: string;
   prompt: string;
   requestId: string;
   resetVersion: number;
@@ -51,6 +51,9 @@ function makeRequestId() {
     return `taggame-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   }
 }
+
+const TAGGAME_STARTER_CODE = `setCpm(110/4)
+$silence: s("~")`;
 
 function formatError(error: unknown) {
   if (error instanceof Error) {
@@ -109,13 +112,15 @@ export function useTagGameController() {
   const [contextSource, setContextSource] = React.useState<TagGameContextSource | null>(null);
   const [isHydrated, setIsHydrated] = React.useState(false);
 
-  const { setValue, submit, isDisabled, isPending } = useTamboThreadInput();
+  const { value, setValue, submit, isDisabled, isPending } = useTamboThreadInput();
   const { startNewThread, streamingState, currentThreadId } = useTambo();
   const {
+    code,
     isPlaying,
     isReady,
     stop,
     reset,
+    setCode,
     clearError,
     error,
     revertNotification,
@@ -246,14 +251,20 @@ export function useTagGameController() {
   React.useLayoutEffect(() => {
     if (!isHydrated || hasInitializedThreadRef.current) return;
     hasInitializedThreadRef.current = true;
+    stop();
+    clearErrorRef.current();
+    clearRevertNotificationRef.current();
+    setValueRef.current("");
+    const starterCode = TAGGAME_STARTER_CODE;
     reset();
+    setCode(starterCode);
     const initialThreadId = startNewThread();
     debug({
       step: "thread",
       message: "Initialized fresh TagGame thread.",
-      detail: { threadId: initialThreadId },
+      detail: { threadId: initialThreadId, starterCode },
     });
-  }, [debug, isHydrated, reset, startNewThread]);
+  }, [debug, isHydrated, reset, setCode, startNewThread, stop]);
 
   React.useEffect(() => {
     submitRef.current = submit;
@@ -266,6 +277,12 @@ export function useTagGameController() {
     setIsAiUpdating(activeCookRequestId !== null || pendingSubmission !== null);
     return () => setIsAiUpdating(false);
   }, [activeCookRequestId, pendingSubmission, setIsAiUpdating]);
+
+  React.useEffect(() => {
+    if (!isReady) return;
+    if (code !== DEFAULT_CODE) return;
+    setCode(TAGGAME_STARTER_CODE);
+  }, [code, isReady, setCode]);
 
   React.useEffect(() => {
     if (previousStreamingStatusRef.current === streamingState.status) return;
@@ -354,18 +371,31 @@ export function useTagGameController() {
       return;
     }
 
+    const hasGenerationError = Boolean(
+      submitError
+      || revertNotification?.message
+      || error,
+    );
+
+    if (hasGenerationError) {
+      return;
+    }
+
     setStatusStepLabel(
       isPlaying && lastCookedSignatureRef.current === selectionSignature
         ? "Cook complete, loop is live"
         : "Step 1/4 Click Cook in the core",
     );
   }, [
+    error,
     invalidateCurrentCook,
     isPlaying,
     resetGenerationState,
+    revertNotification,
     selectedIds.length,
     selectionSignature,
     stop,
+    submitError,
     summary,
   ]);
 
@@ -414,14 +444,14 @@ export function useTagGameController() {
           customTags: selectedCustomTags,
           contextFile: resolvedContextFile,
         });
-        const expectedThreadId = startNewThread();
+        const nextThreadId = startNewThread();
 
         debug({
           step: "cook",
           level: "info",
           message: "Cook button pressed, preparing a fresh fusion run.",
           detail: {
-            expectedThreadId,
+            nextThreadId,
             requestId,
             selectionCount: selectedIds.length,
             styles: selectedStyles.map((item) => item.id),
@@ -442,7 +472,6 @@ export function useTagGameController() {
 
         setStatusStepLabel("Step 2/4 Opening a fresh cooking thread");
         setPendingSubmission({
-          expectedThreadId,
           prompt,
           requestId,
           resetVersion,
@@ -489,31 +518,38 @@ export function useTagGameController() {
 
   React.useEffect(() => {
     if (!pendingSubmission) return;
-    if (pendingSubmission.expectedThreadId !== currentThreadId) return;
     if (pendingSubmission.resetVersion !== resetVersionRef.current) return;
     if (pendingSubmission.sequence !== generationSequenceRef.current) return;
-    if (submittingRequestIdRef.current === pendingSubmission.requestId) return;
     if (isDisabled) return;
 
-    submittingRequestIdRef.current = pendingSubmission.requestId;
+    const { prompt, requestId, sequence, resetVersion } = pendingSubmission;
+
+    if (currentThreadId === "placeholder" && value !== prompt) {
+      setStatusStepLabel("Step 3/4 Packing the prompt");
+      setValueRef.current(prompt);
+      debug({
+        step: "submit",
+        message: "Queued the fusion prompt on the placeholder thread.",
+        detail: {
+          requestId,
+          threadId: currentThreadId,
+          promptPreview: prompt.slice(0, 280),
+        },
+      });
+      return;
+    }
+
+    if (currentThreadId !== "placeholder" && value !== prompt) return;
+    if (submittingRequestIdRef.current === requestId) return;
+
+    submittingRequestIdRef.current = requestId;
 
     void (async () => {
-      const { prompt, requestId, sequence } = pendingSubmission;
-
-      setActiveTagGameRequestId(requestId);
-      clearRevertNotificationRef.current();
-      clearErrorRef.current();
-
       try {
-        setStatusStepLabel("Step 3/4 Packing the prompt");
-        setValueRef.current(prompt);
-
-        await Promise.resolve();
-
         if (
           latestRequestIdRef.current !== requestId
           || generationSequenceRef.current !== sequence
-          || resetVersionRef.current !== pendingSubmission.resetVersion
+          || resetVersionRef.current !== resetVersion
         ) {
           debug({
             step: "submit",
@@ -524,6 +560,9 @@ export function useTagGameController() {
           return;
         }
 
+        setActiveTagGameRequestId(requestId);
+        clearRevertNotificationRef.current();
+        clearErrorRef.current();
         setStatusStepLabel("Step 4/4 Sending the recipe to Tambo");
         debug({
           step: "submit",
@@ -540,7 +579,6 @@ export function useTagGameController() {
           debug: isTagGameDebugEnabled(),
         });
 
-        setStatusStepLabel("Cook complete, loop is live");
         debug({
           step: "submit",
           level: "success",
@@ -552,7 +590,7 @@ export function useTagGameController() {
         if (
           latestRequestIdRef.current === requestId
           && generationSequenceRef.current === sequence
-          && resetVersionRef.current === pendingSubmission.resetVersion
+          && resetVersionRef.current === resetVersion
         ) {
           setSubmitError(message);
         }
@@ -573,7 +611,7 @@ export function useTagGameController() {
         setPendingSubmission((current) => current?.requestId === requestId ? null : current);
       }
     })();
-  }, [currentThreadId, isDisabled, pendingSubmission, debug, setActiveCookRequestId]);
+  }, [currentThreadId, debug, isDisabled, pendingSubmission, setActiveCookRequestId, value]);
 
   const toggleTag = React.useCallback((id: string) => {
     setSelectedIds((current) => {

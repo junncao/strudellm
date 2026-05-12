@@ -8,7 +8,7 @@ const service = StrudelService.instance();
  * Extract sample/sound names from Strudel code
  * Looks for s("..."), sound("..."), and .s("...") patterns
  */
-function extractSampleNames(code: string): string[] {
+export function extractSampleNames(code: string): string[] {
   const samples: string[] = [];
 
   // Match various sample patterns:
@@ -74,7 +74,7 @@ function findSimilarSamples(
  * Check if samples exist in the soundMap
  * Returns an object with missing samples and suggestions
  */
-async function validateSamples(
+export async function validateSamples(
   sampleNames: string[],
 ): Promise<{ missing: string[]; suggestions: Map<string, string[]> }> {
   const { soundMap } = await import("superdough");

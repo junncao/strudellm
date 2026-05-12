@@ -111,7 +111,7 @@ const tagGameStrudelContextHelper = () => {
     error: errorMessage,
     missingSample: state?.missingSample ?? null,
     instruction: errorMessage
-      ? "The current Strudel code has an error. Use updateRepl with corrected code and keep the loop aligned with the selected tag fusion."
+      ? "The current Strudel code has an error. Use updateTagGameRepl with corrected code and keep the loop aligned with the selected tag fusion."
       : null,
   };
 };

@@ -22,47 +22,92 @@ const tokenClasses: Record<TagGameTag["colorToken"], string> = {
   teal: "from-teal-300/95 via-emerald-200/90 to-white/85 text-teal-950 border-teal-200/75 shadow-teal-300/40",
 };
 
+type SelectionSeat = {
+  offsetXRem: number;
+  offsetYRem: number;
+};
+
+const REM_IN_PX = 16;
+
+const SELECTION_SEATS_BY_COUNT: Record<number, SelectionSeat[]> = {
+  1: [{ offsetXRem: 0, offsetYRem: -5.7 }],
+  2: [
+    { offsetXRem: -4.9, offsetYRem: -4.8 },
+    { offsetXRem: 4.9, offsetYRem: -4.8 },
+  ],
+  3: [
+    { offsetXRem: 0, offsetYRem: -5.9 },
+    { offsetXRem: -4.9, offsetYRem: 3.8 },
+    { offsetXRem: 4.9, offsetYRem: 3.8 },
+  ],
+  4: [
+    { offsetXRem: -5.1, offsetYRem: -4.9 },
+    { offsetXRem: 5.1, offsetYRem: -4.9 },
+    { offsetXRem: -5.1, offsetYRem: 3.9 },
+    { offsetXRem: 5.1, offsetYRem: 3.9 },
+  ],
+  5: [
+    { offsetXRem: 0, offsetYRem: -6.1 },
+    { offsetXRem: -5.2, offsetYRem: -3.8 },
+    { offsetXRem: 5.2, offsetYRem: -3.8 },
+    { offsetXRem: -5.2, offsetYRem: 4.4 },
+    { offsetXRem: 5.2, offsetYRem: 4.4 },
+  ],
+  6: [
+    { offsetXRem: -5.3, offsetYRem: -5.1 },
+    { offsetXRem: 5.3, offsetYRem: -5.1 },
+    { offsetXRem: -6.6, offsetYRem: -0.5 },
+    { offsetXRem: 6.6, offsetYRem: -0.5 },
+    { offsetXRem: -5.3, offsetYRem: 4.5 },
+    { offsetXRem: 5.3, offsetYRem: 4.5 },
+  ],
+  7: [
+    { offsetXRem: 0, offsetYRem: -6.2 },
+    { offsetXRem: -5.3, offsetYRem: -4.3 },
+    { offsetXRem: 5.3, offsetYRem: -4.3 },
+    { offsetXRem: -6.7, offsetYRem: 0.1 },
+    { offsetXRem: 6.7, offsetYRem: 0.1 },
+    { offsetXRem: -5.3, offsetYRem: 4.7 },
+    { offsetXRem: 5.3, offsetYRem: 4.7 },
+  ],
+  8: [
+    { offsetXRem: -3.7, offsetYRem: -6.0 },
+    { offsetXRem: 3.7, offsetYRem: -6.0 },
+    { offsetXRem: -6.2, offsetYRem: -2.8 },
+    { offsetXRem: 6.2, offsetYRem: -2.8 },
+    { offsetXRem: -6.2, offsetYRem: 1.9 },
+    { offsetXRem: 6.2, offsetYRem: 1.9 },
+    { offsetXRem: -3.7, offsetYRem: 5.0 },
+    { offsetXRem: 3.7, offsetYRem: 5.0 },
+  ],
+};
+
 function buildSelectionTarget(index: number, count: number, tags: TagGameTag[]) {
-  const centerY = 44.5;
-  const placed: Array<{ x: number; y: number; footprint: ReturnType<typeof getTagGameBubbleFootprint> }> = [];
-  const normalizedCount = Math.max(count, 1);
+  const tag = tags[index];
+  const dimensions = tag ? getTagGameBubbleDimensions(tag, "selected") : null;
+  const halfHeightPx = dimensions ? dimensions.heightPx / 2 : 18;
+  const seats = SELECTION_SEATS_BY_COUNT[count];
 
-  for (let currentIndex = 0; currentIndex <= index; currentIndex += 1) {
-    const tag = tags[currentIndex];
-    const footprint = getTagGameBubbleFootprint(tag, "selected");
-    let chosen = { x: 50, y: count <= 1 ? 37.5 : centerY - 8.5 };
-    let found = false;
-
-    for (let ring = 0; ring < 6 && !found; ring += 1) {
-      const ringCount = Math.max(6, Math.ceil(normalizedCount * 1.35) + ring * 3);
-      const radiusX = 9 + ring * 4.2;
-      const radiusY = 6.8 + ring * 3.3;
-      const offset = (currentIndex / normalizedCount) * Math.PI * 2 + ring * 0.37;
-
-      for (let step = 0; step < ringCount; step += 1) {
-        const angle = -Math.PI / 2 + offset + (step / ringCount) * Math.PI * 2;
-        const candidate = {
-          x: 50 + Math.cos(angle) * radiusX,
-          y: centerY + Math.sin(angle) * radiusY,
-        };
-        const collides = placed.some((item) => (
-          Math.abs(candidate.x - item.x) < footprint.halfWidth + item.footprint.halfWidth
-          && Math.abs(candidate.y - item.y) < footprint.halfHeight + item.footprint.halfHeight
-        ));
-
-        if (!collides) {
-          chosen = candidate;
-          found = true;
-          break;
-        }
-      }
-    }
-
-    placed.push({ x: chosen.x, y: chosen.y, footprint });
+  if (seats && seats[index]) {
+    const seat = seats[index];
+    const topOffsetPx = seat.offsetYRem * REM_IN_PX - halfHeightPx;
+    return {
+      left: `calc(50% + ${seat.offsetXRem}rem)`,
+      top: `calc(50% + ${topOffsetPx.toFixed(1)}px)`,
+    };
   }
 
-  const target = placed[index];
-  return { x: target.x, y: target.y };
+  const normalizedCount = Math.max(count, 1);
+  const ringIndex = Math.floor(index / 8);
+  const slotIndex = index % 8;
+  const angle = -Math.PI / 2 + (slotIndex / 8) * Math.PI * 2 + ringIndex * 0.22;
+  const radiusXRem = 6 + ringIndex * 1.2;
+  const radiusYPx = (5.2 + ringIndex * 1.1) * REM_IN_PX;
+
+  return {
+    left: `calc(50% + ${(Math.cos(angle) * radiusXRem).toFixed(2)}rem)`,
+    top: `calc(50% + ${(Math.sin(angle) * radiusYPx - halfHeightPx).toFixed(1)}px)`,
+  };
 }
 
 export function TagBubbleField({
@@ -95,7 +140,7 @@ export function TagBubbleField({
         const selectedTarget = isSelected
           ? buildSelectionTarget(index, selectedIds.length, selectedTags)
           : null;
-        const dimensions = getTagGameBubbleDimensions(tag);
+        const dimensions = getTagGameBubbleDimensions(tag, isSelected ? "selected" : "field");
 
         return (
           <motion.button
@@ -111,13 +156,13 @@ export function TagBubbleField({
                 : tag.kind === "custom"
                   ? "text-[9px] shadow-[0_16px_38px_rgba(15,23,42,0.12)]"
                   : "text-[9px] shadow-[0_16px_38px_rgba(15,23,42,0.12)]",
-              isSelected ? "z-[70] border-white/90" : "z-10 hover:z-20",
+              isSelected ? "z-20 border-white/90" : "z-10 hover:z-20",
             )}
             style={{ width: `${dimensions.widthPx}px`, minHeight: `${dimensions.heightPx}px` }}
             initial={false}
             animate={{
-              left: `${selectedTarget?.x ?? base.x}%`,
-              top: `${selectedTarget?.y ?? base.y}%`,
+              left: selectedTarget?.left ?? `${base.x}%`,
+              top: selectedTarget?.top ?? `${base.y}%`,
               scale: isSelected ? 1.04 : base.scale,
               filter: isSelected
                 ? "brightness(1)"
@@ -133,14 +178,20 @@ export function TagBubbleField({
                   ],
             }}
             transition={{
-              left: { type: "spring", stiffness: 160, damping: 18, mass: 0.75 },
-              top: { type: "spring", stiffness: 160, damping: 18, mass: 0.75 },
-              scale: { type: "spring", stiffness: 160, damping: 18, mass: 0.75 },
+              left: isSelected
+                ? { duration: 0.16, ease: "easeOut" }
+                : { type: "spring", stiffness: 160, damping: 18, mass: 0.75 },
+              top: isSelected
+                ? { duration: 0.16, ease: "easeOut" }
+                : { type: "spring", stiffness: 160, damping: 18, mass: 0.75 },
+              scale: isSelected
+                ? { duration: 0.16, ease: "easeOut" }
+                : { type: "spring", stiffness: 160, damping: 18, mass: 0.75 },
               filter: isSelected
-                ? { type: "spring", stiffness: 160, damping: 18, mass: 0.75 }
+                ? { duration: 0.16, ease: "easeOut" }
                 : { duration: base.duration * 0.9, delay: base.delay * 0.76, repeat: Infinity, ease: "easeInOut" },
               boxShadow: isSelected
-                ? { type: "spring", stiffness: 160, damping: 18, mass: 0.75 }
+                ? { duration: 0.16, ease: "easeOut" }
                 : { duration: base.duration * 0.82, delay: base.delay * 0.7, repeat: Infinity, ease: "easeInOut" },
             }}
           >

@@ -205,15 +205,18 @@ Generation policy:
 - Only the latest request matters. If you infer a newer combination exists or the tool says this request is superseded, abandon this attempt and align to the newest requestId.
 - Treat selected style tags as macro guidance, gene tags as concrete structural constraints, and custom tags as direct user steering.
 - Use the reference sketches below as quality anchors, not as templates to copy blindly.
+- Some reference sketches use compact variable + stack form. Convert them into final $track format in your answer.
 - Merge multiple references into one coherent loop and keep the result compact, musical, and production-like.
 - Prefer stable Strudel syntax that this project can evaluate successfully.
-- Never use $drums:, $bass:, $lead:, $pad:, or any other labeled-statement track syntax, because this TagGame runtime rejects it.
-- Return plain JavaScript assignments plus a final stack(...) expression.
+- Return final code in multi-track labeled-statement format using $track: syntax.
+- Do not end with stack(...). Each audible voice should be its own $track.
 
 Hard requirements for the code:
-- The code must be valid Strudel and must end in a valid pattern expression.
+- The code must be valid Strudel.
 - Include setCpm(...).
-- Use 2 to 5 named voices assigned to variables like drums = ..., bass = ..., chords = ..., pad = ... then combine them with stack(drums, bass, chords, pad).
+- Put global setup before the first $track line.
+- Use 2 to 5 named tracks such as $drums:, $bass:, $chords:, $lead:, $pad:.
+- Do not hide multiple voices inside one track with stack(...).
 - Do not use semicolons if they are unnecessary, and do not wrap the whole program in markdown fences.
 - Keep the result immediately listenable as a looping sketch.
 - Favor dependable, common Strudel constructs and stable sample/synth choices.
@@ -246,9 +249,9 @@ Composition guidance:
 
 Valid output shape example:
 setCpm(124/4)
-drums = s("bd ~ bd ~, ~ hh ~ hh, ~ sd ~ ~, ~ ~ cp ~").bank("RolandTR909")
-bass = note("c2 ~ g1 ~ a1 ~ g1 ~").s("sawtooth").lpf(520)
-chords = note("<[c4,e4,g4,b4] [a3,c4,e4,g4]>").s("gm_epiano1").gain(0.3).room(0.2)
-stack(drums, bass, chords)
+
+$drums: s("bd ~ bd ~, ~ hh ~ hh, ~ sd ~ ~, ~ ~ cp ~").bank("RolandTR909")
+$bass: note("c2 ~ g1 ~ a1 ~ g1 ~").s("sawtooth").lpf(520)
+$chords: note("<[c4,e4,g4,b4] [a3,c4,e4,g4]>").s("gm_epiano1").gain(0.3).room(0.2)
 `;
 }

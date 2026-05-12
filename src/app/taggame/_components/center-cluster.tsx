@@ -20,7 +20,7 @@ export function CenterCluster({
   const active = tags.length > 0;
 
   return (
-    <div className="pointer-events-none absolute left-1/2 top-1/2 z-30 h-[26rem] w-[26rem] -translate-x-1/2 -translate-y-1/2 rounded-full">
+    <div className="pointer-events-none absolute left-1/2 top-1/2 z-40 h-[26rem] w-[26rem] -translate-x-1/2 -translate-y-1/2 rounded-full">
       <motion.div
         className={cn(
           "pointer-events-none absolute inset-0 rounded-full mix-blend-screen",

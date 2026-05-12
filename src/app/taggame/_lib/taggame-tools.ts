@@ -1,52 +1,13 @@
 import { defineTool, type TamboTool } from "@tambo-ai/react";
 import { z } from "zod";
 import { StrudelService } from "@/strudel/lib/service";
+import { extractSampleNames, validateSamples } from "@/strudel/tools/validateAndUpdateRepl";
 import { getActiveTagGameRequestId } from "./taggame-generation-guard";
 
 const service = StrudelService.instance();
 
-function extractFinalStackVoiceNames(code: string): Set<string> {
-  const match = code.match(/(?:^|\n)\s*(?:return\s+)?stack\(([\s\S]*?)\)\s*;?\s*$/);
-  if (!match) {
-    return new Set();
-  }
-
-  return new Set(
-    match[1]
-      .split(",")
-      .map((part) => part.trim())
-      .filter((part) => /^[a-z][\w]*$/i.test(part)),
-  );
-}
-
 function normalizeTagGameCode(code: string): string {
-  let normalized = code.trim();
-  const finalVoiceNames = extractFinalStackVoiceNames(normalized);
-
-  normalized = normalized.replace(
-    /^(let|const|var)\s+([a-z][\w]*)\s*=\s*/gm,
-    (_match, declaration: string, name: string) => {
-      if (finalVoiceNames.has(name)) {
-        return `$${name}: `;
-      }
-      return `${declaration} ${name} = `;
-    },
-  );
-
-  normalized = normalized.replace(
-    /^(?!\$)([a-z][\w]*)\s*=\s*/gm,
-    (_match, name: string) => {
-      if (finalVoiceNames.has(name)) {
-        return `$${name}: `;
-      }
-      return `const ${name} = `;
-    },
-  );
-
-  normalized = normalized.replace(/^\s*return\s+stack\([\s\S]*?\)\s*;?\s*$/gm, "");
-  normalized = normalized.replace(/^\s*stack\([\s\S]*?\)\s*;?\s*$/gm, "");
-
-  return normalized.trim();
+  return code.trim();
 }
 
 export const updateTagGameRepl = defineTool({
@@ -56,9 +17,9 @@ export const updateTagGameRepl = defineTool({
 Rules:
 - You MUST pass back the exact requestId provided in the user's latest prompt.
 - If success is false, immediately call this tool again with corrected code.
-- Return plain JavaScript Strudel code, not $label: track syntax.
-- Use assignments like drums = ..., bass = ..., pad = ... and finish with stack(drums, bass, pad).
-- Include setCpm(...).
+- Return final Strudel code in multi-track $label: format.
+- Put global setup like setCpm(...) before the first $track line.
+- Use 2 to 5 named tracks such as $drums:, $bass:, $chords:, $lead:, $pad:.
 - Prefer dependable Strudel constructs and concise looping sketches.`,
   tool: async ({ code, requestId }) => {
     const activeRequestId = getActiveTagGameRequestId();
@@ -72,6 +33,23 @@ Rules:
 
     await service.init();
     const normalizedCode = normalizeTagGameCode(code);
+    const sampleNames = extractSampleNames(normalizedCode);
+    if (sampleNames.length > 0) {
+      const { missing, suggestions } = await validateSamples(sampleNames);
+      if (missing.length > 0) {
+        let error = `Error: Unknown sample(s): ${missing.join(", ")}.`;
+
+        for (const [sample, similar] of suggestions) {
+          if (similar.length > 0) {
+            error += `\n  - "${sample}" - did you mean: ${similar.join(", ")}?`;
+          }
+        }
+
+        error += "\n\nUse dependable built-in sounds or retry with valid sample names.";
+        return { success: false, error, code: normalizedCode };
+      }
+    }
+
     const result = await service.updateAndPlay(normalizedCode, { source: "ai" });
     return { ...result, code: normalizedCode };
   },
