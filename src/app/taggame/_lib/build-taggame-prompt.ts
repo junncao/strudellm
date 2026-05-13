@@ -1,3 +1,4 @@
+import type { TagGameGeneDoc } from "./taggame-gene-docs";
 import type { TagGameContextFile } from "./taggame-context-file";
 import type { TagGameCustomTag, TagGameGeneTag, TagGameStyleTag } from "./taggame-tags";
 
@@ -51,6 +52,24 @@ function formatContextFile(contextFile: TagGameContextFile | null | undefined) {
 - Treat the content below as high-priority local project context for this generation. Use it to improve musical specificity, but do not quote it unless needed.
 
 ${contextFile.content}`;
+}
+
+function formatGeneDocs(geneDocs: TagGameGeneDoc[]) {
+  if (geneDocs.length === 0) {
+    return "- No selected gene handbook docs attached.";
+  }
+
+  return geneDocs
+    .map(
+      ({ geneId, geneName, contextFile }) => `- Gene: ${geneName} (${geneId})
+  - File name: ${contextFile.fileName}
+  - Loaded at: ${new Date(contextFile.loadedAt).toISOString()}
+  - Length used in prompt: ${contextFile.content.length} chars${contextFile.truncated ? ` (truncated from ${contextFile.originalLength})` : ""}
+  - This handbook doc is attached only because this gene is selected. Use it to interpret the selected gene more precisely, not as a global rule for unrelated genes.
+
+${contextFile.content}`,
+    )
+    .join("\n\n");
 }
 
 function formatReferenceSketches(styles: TagGameStyleTag[], genes: TagGameGeneTag[]) {
@@ -176,17 +195,20 @@ export function buildTagGamePrompt({
   genes,
   customTags,
   contextFile,
+  geneDocs,
 }: {
   requestId: string;
   styles: TagGameStyleTag[];
   genes: TagGameGeneTag[];
   customTags: TagGameCustomTag[];
   contextFile?: TagGameContextFile | null;
+  geneDocs?: TagGameGeneDoc[];
 }) {
   const styleSection = formatStyles(styles);
   const geneSection = formatGenes(genes);
   const customSection = formatCustomTags(customTags);
   const contextFileSection = formatContextFile(contextFile);
+  const geneDocsSection = formatGeneDocs(geneDocs ?? []);
   const referenceSection = formatReferenceSketches(styles, genes);
 
   return `You are generating music for an interactive tag-combination game.
@@ -204,6 +226,7 @@ Tool contract:
 Generation policy:
 - Only the latest request matters. If you infer a newer combination exists or the tool says this request is superseded, abandon this attempt and align to the newest requestId.
 - Treat selected style tags as macro guidance, gene tags as concrete structural constraints, and custom tags as direct user steering.
+- If selected gene handbook docs are attached, use them to interpret only their matching selected genes more precisely. Do not invent handbook constraints for genes that have no attached doc.
 - Use the reference sketches below as quality anchors, not as templates to copy blindly.
 - Some reference sketches use compact variable + stack form. Convert them into final $track format in your answer.
 - Merge multiple references into one coherent loop and keep the result compact, musical, and production-like.
@@ -230,6 +253,9 @@ ${styleSection}
 
 Fine-grained music genes:
 ${geneSection}
+
+Selected gene handbook docs:
+${geneDocsSection}
 
 Custom user instructions:
 ${customSection}

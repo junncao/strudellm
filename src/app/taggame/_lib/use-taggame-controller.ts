@@ -5,6 +5,7 @@ import { DEFAULT_CODE } from "@/strudel/lib/service";
 import { useTambo, useTamboThreadInput } from "@tambo-ai/react";
 import * as React from "react";
 import { buildTagGamePrompt } from "./build-taggame-prompt";
+import { getTagGameGeneDocRefs, resolveTagGameGeneDocs } from "./taggame-gene-docs";
 import {
   type TagGameContextFile,
   type TagGameContextSource,
@@ -417,17 +418,25 @@ export function useTagGameController() {
     const sequence = generationSequenceRef.current;
     const requestId = makeRequestId();
     const resetVersion = resetVersionRef.current;
+    const selectedGeneDocRefs = getTagGameGeneDocRefs(selectedGenes);
 
     latestRequestIdRef.current = requestId;
     lastCookedSignatureRef.current = selectionSignature;
     setActiveCookRequestId(requestId);
     setPendingSummary(summary);
     setSubmitError(null);
-    setStatusStepLabel(contextSource?.kind === "path" ? "Step 2/4 Opening local debug file" : "Step 2/4 Opening a fresh cooking thread");
+    setStatusStepLabel(
+      contextSource?.kind === "path"
+        ? "Step 2/4 Opening local debug file"
+        : selectedGeneDocRefs.length > 0
+          ? "Step 2/4 Loading selected gene docs"
+          : "Step 2/4 Opening a fresh cooking thread",
+    );
 
     void (async () => {
       try {
         const resolvedContextFile = await resolveTagGameContextSource(contextSource);
+        const resolvedGeneDocs = await resolveTagGameGeneDocs(selectedGenes);
 
         if (
           latestRequestIdRef.current !== requestId
@@ -443,6 +452,7 @@ export function useTagGameController() {
           genes: selectedGenes,
           customTags: selectedCustomTags,
           contextFile: resolvedContextFile,
+          geneDocs: resolvedGeneDocs,
         });
         const nextThreadId = startNewThread();
 
@@ -457,6 +467,12 @@ export function useTagGameController() {
             styles: selectedStyles.map((item) => item.id),
             genes: selectedGenes.map((item) => item.id),
             custom: selectedCustomTags.map((item) => item.label),
+            geneDocs: resolvedGeneDocs.map((item) => ({
+              geneId: item.geneId,
+              fileName: item.contextFile.fileName,
+              chars: item.contextFile.content.length,
+              truncated: item.contextFile.truncated,
+            })),
             contextSource: contextSource?.kind === "path"
               ? { kind: "path", path: contextSource.path }
               : resolvedContextFile
@@ -490,7 +506,7 @@ export function useTagGameController() {
         debug({
           step: "context",
           level: "error",
-          message: "Failed to resolve debug context before cooking.",
+          message: "Failed to resolve handbook or debug context before cooking.",
           detail: nextError,
         });
         if (activeCookRequestIdRef.current === requestId) {
